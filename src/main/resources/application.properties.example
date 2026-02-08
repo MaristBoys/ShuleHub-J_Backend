@@ -1,0 +1,33 @@
+# =================================================================
+# SHULEHUB BACKEND - CONFIGURATION TEMPLATE
+# =================================================================
+# Questo file serve come modello per la configurazione del backend.
+# Istruzioni: 
+# 1. Copia questo file e nominalo 'application.properties'
+# 2. Compila i valori con le tue credenziali reali (non caricarle su Git!)
+# 3. Le variabili in formato ${NOME_VAR:default} verranno lette 
+#    automaticamente dall'ambiente (es. Render) o useranno il default.
+# =================================================================
+
+spring.application.name=backend
+
+# --- DATABASE CONFIGURATION (Supabase / PostgreSQL) ---
+# L'URL di connessione, lo username e la password forniti dalla dashboard di Supabase.
+spring.datasource.url=jdbc:postgresql://your-db-host.supabase.co:5432/postgres
+spring.datasource.username=postgres
+spring.datasource.password=your_secure_db_password
+
+# --- SECURITY & JWT CONFIGURATION ---
+# shulehub.jwt.secret: Deve essere una stringa lunga almeno 32-64 caratteri.
+# In produzione su Render, imposta la variabile d'ambiente JWT_SECRET_ENV.
+shulehub.jwt.secret=${JWT_SECRET_ENV:cambiami_in_una_chiave_segreta_molto_lunga_per_uso_locale}
+
+# --- JPA / HIBERNATE SETTINGS ---
+# 'update' crea o aggiorna automaticamente le tabelle nel database in base alle Entity Java.
+spring.jpa.hibernate.ddl-auto=update
+# Mostra le query SQL nella console del backend (utile per il debugging).
+spring.jpa.show-sql=true
+
+# --- SERVER CONFIGURATION ---
+# Definisce la porta su cui gira il backend (default 8080).
+server.port=8080

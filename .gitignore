@@ -1,33 +1,19 @@
-HELP.md
+# --- JAVA / MAVEN ---
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# --- IDE SPECIFICI (Solo VS Code e IntelliJ se lo usi) ---
 .vscode/
+.idea/
+*.iml
+
+# --- CONFIGURAZIONI SENSIBILI (Fondamentale!) ---
+# Esclude application.properties: le credenziali reali e i dati sensibili (Database, API Keys, JWT Secret)
+# Usa application.properties.example come modello.
+src/main/resources/application.properties
+
+# --- SISTEMA OPERATIVO ---
+.DS_Store
+Thumbs.db
