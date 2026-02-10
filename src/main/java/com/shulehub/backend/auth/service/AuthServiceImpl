@@ -1,0 +1,80 @@
+package com.shulehub.backend.auth.service;
+
+import com.shulehub.backend.auth.mapper.AuthMapper;
+import com.shulehub.backend.auth.model.dto.TeacherContextDTO;
+import com.shulehub.backend.auth.model.dto.UserAuthDTO;
+import com.shulehub.backend.auth.model.entity.EmployeeProfileView;
+import com.shulehub.backend.auth.repository.EmployeeProfileViewRepository;
+import com.shulehub.backend.auth.repository.PermissionRepository;
+import com.shulehub.backend.school_config.model.entity.Year;
+import com.shulehub.backend.school_config.repository.YearRepository;
+import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
+import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
+import com.shulehub.backend.common.exception.UnauthorizedException;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class AuthServiceImpl implements AuthService {
+
+    private final EmployeeProfileViewRepository profileViewRepository;
+    private final PermissionRepository permissionRepository;
+    private final YearRepository yearRepository;
+    private final TeacherAssignmentRepository teacherAssignmentRepository;
+    private final AuthMapper authMapper;
+
+    public AuthServiceImpl(EmployeeProfileViewRepository profileViewRepository,
+                           PermissionRepository permissionRepository,
+                           YearRepository yearRepository,
+                           TeacherAssignmentRepository teacherAssignmentRepository,
+                           AuthMapper authMapper) {
+        this.profileViewRepository = profileViewRepository;
+        this.permissionRepository = permissionRepository;
+        this.yearRepository = yearRepository;
+        this.teacherAssignmentRepository = teacherAssignmentRepository;
+        this.authMapper = authMapper;
+    }
+
+    @Override
+    public UserAuthDTO loginWithGoogle(String email) {
+        // 1. Recupero il profilo utente/dipendente dalla Vista
+        EmployeeProfileView view = profileViewRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("Accesso negato: utente non censito o non attivo"));
+
+        // 2. Converto l'Entity in DTO base tramite il Mapper
+        UserAuthDTO authDto = authMapper.toAuthDTO(view);
+
+        // 3. Recupero i permessi nominali (es: "VOTE_INSERT", "STUDENT_READ")
+        Set<String> permissions = permissionRepository.findNamesByProfileId(view.getProfileId());
+        authDto.setPermissions(permissions);
+
+        // 4. Se l'utente è un docente, arricchisco il profilo con il contesto operativo
+        if ("TEACHER".equalsIgnoreCase(view.getProfileName())) {
+            
+            // Cerco l'anno scolastico attivo
+            Year activeYear = yearRepository.findByYearIsActiveTrue()
+                    .orElseThrow(() -> new RuntimeException("Configurazione mancante: nessun anno scolastico attivo"));
+
+            // Recupero le assegnazioni (Classi + Materie) per il docente nell'anno attivo
+            List<TeacherAssignmentDTO> assignments = teacherAssignmentRepository
+                    .findTeacherContext(view.getEmployeeId(), activeYear.getId());
+
+            TeacherContextDTO teacherCtx = new TeacherContextDTO();
+            teacherCtx.setAssignments(assignments);
+
+            // Identifico le classi di cui è coordinatore (Class Teacher)
+            Set<Integer> classTeacherFor = assignments.stream()
+                    .filter(TeacherAssignmentDTO::isClassTeacher)
+                    .map(TeacherAssignmentDTO::getYearRoomId)
+                    .collect(Collectors.toSet());
+            
+            teacherCtx.setClassTeacherRoomIds(classTeacherFor);
+            authDto.setTeacherData(teacherCtx);
+        }
+
+        return authDto;
+    }
+}

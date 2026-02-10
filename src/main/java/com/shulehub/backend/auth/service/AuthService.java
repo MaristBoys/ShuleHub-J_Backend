@@ -1,6 +1,6 @@
 // Qui inseriamo la logica di validazione del token di Google.
 
-package com.shulehub.backend.service;
+package com.shulehub.backend.auth.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;

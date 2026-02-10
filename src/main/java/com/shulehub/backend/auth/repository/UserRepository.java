@@ -1,4 +1,4 @@
-package com.shulehub.backend.repository;
+package com.shulehub.backend.auth.repository;
 
 import com.shulehub.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

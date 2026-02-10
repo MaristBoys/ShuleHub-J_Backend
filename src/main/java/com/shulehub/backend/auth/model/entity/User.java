@@ -1,4 +1,4 @@
-package com.shulehub.backend.entity;
+package com.shulehub.backend.auth.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
