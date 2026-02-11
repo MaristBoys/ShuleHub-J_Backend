@@ -35,7 +35,7 @@ public class AuthController {
     }
 
     @PostMapping("/google-login")
-    public ResponseEntity<ApiResponse<UserAuthDTO>> googleLogin(
+    public ResponseEntity<ApiResponse<?>> googleLogin(
             @RequestBody Map<String, String> payload,
             HttpServletResponse response) {
         

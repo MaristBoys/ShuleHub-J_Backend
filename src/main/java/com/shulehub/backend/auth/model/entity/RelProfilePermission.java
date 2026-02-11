@@ -1,3 +1,10 @@
+package com.shulehub.backend.auth.model.entity; // <--- Fondamentale per Maven
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 @Entity
 @Table(name = "rel_profile_permission")
 @Data

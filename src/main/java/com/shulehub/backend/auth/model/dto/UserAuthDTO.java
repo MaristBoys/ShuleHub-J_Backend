@@ -11,5 +11,5 @@ public class UserAuthDTO {
     private String email;
     private String profileName; // Preso dal descrittivo della vista
     private Set<String> permissions; // Popolato dal Service
-    private TeacherContextDTO teacherData; // Popolato solo se Teacher
+    private TeacherContextDTO teacherContext; // Popolato solo se Teacher
 }

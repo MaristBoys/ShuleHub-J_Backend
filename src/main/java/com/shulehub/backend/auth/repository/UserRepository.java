@@ -1,6 +1,6 @@
 package com.shulehub.backend.auth.repository;
 
-import com.shulehub.backend.entity.User;
+import com.shulehub.backend.auth.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
