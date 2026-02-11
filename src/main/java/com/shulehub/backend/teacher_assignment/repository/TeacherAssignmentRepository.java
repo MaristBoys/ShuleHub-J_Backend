@@ -14,7 +14,14 @@ import java.util.UUID;
 public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssignment, Integer> {
 
     @Query("SELECT new com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO(" +
-           "yr.id, r.roomName, s.id, s.subjectName, ta.isClassTeacher) " +
+           "yr.id, " +
+           "r.roomName, " +
+           "s.id, " +
+           "s.subjectNameKsw, " +  // Campo Swahili
+           "s.subjectNameEng, " +  // Campo Inglese
+           "s.subjectAbbr, " +     // Abbreviazione
+           "s.subjectDescription, " + // Descrizione
+           "ta.isClassTeacher) " +
            "FROM TeacherAssignment ta " +
            "JOIN YearRoom yr ON ta.idYearRoom = yr.id " +
            "JOIN Room r ON yr.idRoom = r.id " +
