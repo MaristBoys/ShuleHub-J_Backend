@@ -59,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserAuthDTO loginWithGoogle(String email) {
         // 1. Recupero il profilo utente dalla Vista filtrando per email
-        EmployeeProfileView view = profileViewRepository.findByWorkEmail(email)
+        EmployeeProfileView view = profileViewRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Accesso negato: utente non censito o non attivo"));
 
         // 2. Converto l'Entity in DTO base tramite il Mapper
