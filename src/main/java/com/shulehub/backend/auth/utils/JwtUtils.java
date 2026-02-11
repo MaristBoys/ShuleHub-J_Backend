@@ -14,40 +14,25 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-
-    @Value("${shulehub.jwt.secret:default_secret_key_placeholder_che_sia_lungo_almeno_32_caratteri}")
+    @Value("${shulehub.jwt.secret}")
     private String jwtSecret;
 
-    // Durata del token: 24 ore
-    private final long jwtExpirationMs = 86400000; 
+    private final long jwtExpirationMs = 86400000; // 24 ore
 
     private Key key;
 
-    /**
-     * Questo metodo viene eseguito automaticamente dopo che Spring ha iniettato il valore di jwtSecret.
-     * Serve a preparare la chiave crittografica in modo sicuro.
-     */
     @PostConstruct
     public void init() {
-        try {
-            System.out.println("DEBUG: Inizializzazione JWT con chiave lunga: " + (jwtSecret != null ? jwtSecret.length() : "null"));
-            
-            String cleanSecret = (jwtSecret != null) ? jwtSecret.trim() : "default_secret_key_placeholder_che_sia_lungo_almeno_32_caratteri";
-            this.key = Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
-            
-            System.out.println("DEBUG: Chiave JWT creata con successo!");
-        } catch (Exception e) {
-            System.err.println("DEBUG ERROR: Fallimento creazione chiave JWT: " + e.getMessage());
-            // Forziamo una chiave di emergenza per far partire l'app e vedere i log
-            this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-        }
+        // Pulizia e validazione della chiave all'avvio
+        byte[] keyBytes = jwtSecret.trim().getBytes(StandardCharsets.UTF_8);
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -60,8 +45,6 @@ public class JwtUtils {
                 .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            // Loggare l'eccezione potrebbe aiutare in fase di debug, 
-            // ma restituiamo false per invalidare il token
             return false;
         }
     }
