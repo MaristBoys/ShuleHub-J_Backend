@@ -14,7 +14,8 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    @Value("${shulehub.jwt.secret}")
+
+    @Value("${shulehub.jwt.secret:default_secret_key_placeholder_che_sia_lungo_almeno_32_caratteri}")
     private String jwtSecret;
 
     // Durata del token: 24 ore
@@ -28,11 +29,18 @@ public class JwtUtils {
      */
     @PostConstruct
     public void init() {
-        // .trim() rimuove eventuali spazi bianchi o ritorni a capo invisibili dalla variabile di Render
-        String cleanSecret = jwtSecret.trim();
-        
-        // Trasformiamo la stringa in un oggetto Key utilizzabile dall'algoritmo HS256
-        this.key = Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
+        try {
+            System.out.println("DEBUG: Inizializzazione JWT con chiave lunga: " + (jwtSecret != null ? jwtSecret.length() : "null"));
+            
+            String cleanSecret = (jwtSecret != null) ? jwtSecret.trim() : "default_secret_key_placeholder_che_sia_lungo_almeno_32_caratteri";
+            this.key = Keys.hmacShaKeyFor(cleanSecret.getBytes(StandardCharsets.UTF_8));
+            
+            System.out.println("DEBUG: Chiave JWT creata con successo!");
+        } catch (Exception e) {
+            System.err.println("DEBUG ERROR: Fallimento creazione chiave JWT: " + e.getMessage());
+            // Forziamo una chiave di emergenza per far partire l'app e vedere i log
+            this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        }
     }
 
     public String generateToken(String email) {
