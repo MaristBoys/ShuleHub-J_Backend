@@ -1,8 +1,6 @@
 package com.shulehub.backend.auth.utils;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.codec.binary.Hex;
@@ -10,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 
@@ -20,7 +17,6 @@ public class JwtUtils {
     @Value("${JWT_SECRET_ENV}")
     private String jwtSecret;
 
-    // 24 ore
     private static final long JWT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
     private SecretKey key;
@@ -33,11 +29,10 @@ public class JwtUtils {
                 throw new IllegalStateException("JWT_SECRET_ENV non configurata");
             }
 
-            // Decodifica HEX -> byte reali
             byte[] keyBytes = Hex.decodeHex(jwtSecret.trim());
 
             if (keyBytes.length < 32) {
-                throw new IllegalStateException("JWT secret troppo corta (min 32 byte)");
+                throw new IllegalStateException("JWT secret troppo corta");
             }
 
             this.key = Keys.hmacShaKeyFor(keyBytes);
@@ -51,21 +46,22 @@ public class JwtUtils {
     // GENERAZIONE TOKEN
     // =========================
 
-    public String generateToken(String subject, Map<String, Object> claims) {
-
-        Instant now = Instant.now();
-
-        return Jwts.builder()
-                .subject(subject)
-                .claims(claims)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(JWT_EXPIRATION_MS)))
-                .signWith(key)
-                .compact();
+    public String generateToken(String email) {
+        return generateToken(email, Map.of());
     }
 
-    public String generateToken(String subject) {
-        return generateToken(subject, Map.of());
+    public String generateToken(String email, Map<String, Object> claims) {
+
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
     // =========================
@@ -74,33 +70,34 @@ public class JwtUtils {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(key)
+
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
                     .build()
-                    .parseSignedClaims(token);
+                    .parseClaimsJws(token);
 
             return true;
 
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
     // =========================
-    // ESTRAZIONE CLAIMS
+    // METODI COMPATIBILI COL TUO FILTER
     // =========================
 
-    public String extractSubject(String token) {
+    public String getEmailFromToken(String token) {
         return extractAllClaims(token).getSubject();
     }
 
     public Claims extractAllClaims(String token) {
 
-        return Jwts.parser()
-                .verifyWith(key)
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public Date extractExpiration(String token) {
