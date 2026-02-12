@@ -25,43 +25,51 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // RIMOSSO: il campo private final JwtUtils e il relativo costruttore
-    // Questo risolve la dipendenza circolare all'avvio.
+    private final JwtUtils jwtUtils;
+
+    public SecurityConfig(JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtils jwtUtils) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
-            .cors(Customizer.withDefaults()) 
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/wakeup", "/api/auth/google-login").permitAll() 
-                .anyRequest().authenticated() 
+                .requestMatchers("/api/auth/wakeup", "/api/auth/google-login").permitAll()
+                .anyRequest().authenticated()
             );
-        
-        // Il jwtUtils viene iniettato direttamente qui come parametro del metodo @Bean
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class);
-        
+
+        http.addFilterBefore(
+            new JwtAuthenticationFilter(jwtUtils),
+            UsernamePasswordAuthenticationFilter.class
+        );
+
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:5500", 
-            "http://127.0.0.1:5500", 
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
             "https://maristboys.github.io"
-        )); 
-        
+        ));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of("Set-Cookie"));
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }
