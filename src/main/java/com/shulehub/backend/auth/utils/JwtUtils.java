@@ -1,4 +1,4 @@
-package com.shulehub.backend.auth.security;
+package com.shulehub.backend.auth.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
