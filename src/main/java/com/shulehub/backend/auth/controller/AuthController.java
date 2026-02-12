@@ -84,15 +84,17 @@ public class AuthController {
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Login effettuato", authData));
 
-        } catch (Exception e) {
-            System.err.println("--- ERRORE DURANTE LOGIN ---");
-            System.err.println("Tipo Eccezione: " + e.getClass().getName());
-            System.err.println("Messaggio: " + e.getMessage());
-            e.printStackTrace(); // Questo stamperà nel log di Render esattamente la riga che fallisce
-            
-            
+        } catch (UnauthorizedException e) {
+            // Gestione specifica per utenti non censiti o token scaduti
             return ResponseEntity.status(401)
-                .body(new ApiResponse<>(false, "Autenticazione fallita: " + e.getMessage(), null));
-        }
+                .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (Exception e) {
+            // Gestione per errori tecnici generici (es. database offline)
+             e.printStackTrace(); 
+            return ResponseEntity.status(500)
+                .body(new ApiResponse<>(false, "Errore tecnico del server: " + e.getMessage(), null));
+}
     }
 }
+
+

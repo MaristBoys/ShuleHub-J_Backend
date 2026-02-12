@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface EmployeeProfileViewRepository extends JpaRepository<EmployeeProfileView, String> {
     
     // Trova il profilo tramite l'email di Google
-    Optional<EmployeeProfileView> findByEmail(String workEmail);
+    Optional<EmployeeProfileView> findByEmailIgnoreCaseEmail(String workEmail);
 }
