@@ -18,7 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 // Nota: in produzione sostituisci "*" con l'URL del tuo frontend
-@CrossOrigin(origins = "*", allowCredentials = "true") 
 public class AuthController {
 
     private final AuthService authService;
