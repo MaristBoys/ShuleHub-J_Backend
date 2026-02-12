@@ -51,7 +51,10 @@ public class AuthController {
 
         try {
             // 2. Chiamiamo la verifica che hai già nel tuo AuthServiceImpl
+            System.out.println("Tentativo di login con token: " + idTokenString.substring(0, 10) + "...");
             authService.verifyGoogleToken(idTokenString);
+            System.out.println("Verifica Google superata!");
+
 
             // 3. Estraiamo l'email dal token (necessaria per il tuo loginWithGoogle)
             String payloadBase64 = idTokenString.split("\\.")[1];

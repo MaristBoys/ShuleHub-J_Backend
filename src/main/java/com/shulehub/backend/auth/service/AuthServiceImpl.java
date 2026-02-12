@@ -102,6 +102,7 @@ public class AuthServiceImpl implements AuthService {
     public void verifyGoogleToken(String idTokenString) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList(CLIENT_ID))
+                .setAcceptableTimeSkewSeconds(30) // <--- aggiunge tolleranza fra orologio render e orologio Google
                 .build();
 
         GoogleIdToken idToken = verifier.verify(idTokenString);
