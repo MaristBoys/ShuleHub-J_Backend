@@ -12,9 +12,10 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// Sostituisci il punto 3 del Controller con questo se vuoi più stabilità:
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shulehub.backend.common.exception.UnauthorizedException; // Per gestire il catch specifico
+import com.fasterxml.jackson.databind.ObjectMapper; // Per il parsing dell'email
+import com.fasterxml.jackson.databind.JsonNode;     // Per il parsing dell'email
+
 
 import java.util.Map;
 
