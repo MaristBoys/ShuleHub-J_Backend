@@ -22,7 +22,6 @@ import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
 // --- Repositories ---
 import com.shulehub.backend.auth.repository.UserRepository;
 import com.shulehub.backend.registry.repository.EmployeeRepository;
-import com.shulehub.backend.registry.repository.EmployeeProfileViewRepository;
 import com.shulehub.backend.auth.repository.PermissionRepository;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
@@ -43,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
     // Dichiarazione di tutti i repository usati nel codice
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
-    private final EmployeeProfileViewRepository profileViewRepository;
     private final PermissionRepository permissionRepository;
     private final YearRepository yearRepository;
     private final TeacherAssignmentRepository teacherAssignmentRepository;
@@ -54,13 +52,11 @@ public class AuthServiceImpl implements AuthService {
     // Costruttore aggiornato con tutte le dipendenze
     public AuthServiceImpl(UserRepository userRepository,
                            EmployeeRepository employeeRepository,
-                           EmployeeProfileViewRepository profileViewRepository,
                            PermissionRepository permissionRepository,
                            YearRepository yearRepository,
                            TeacherAssignmentRepository teacherAssignmentRepository) {
         this.userRepository = userRepository;
         this.employeeRepository = employeeRepository;
-        this.profileViewRepository = profileViewRepository;
         this.permissionRepository = permissionRepository;
         this.yearRepository = yearRepository;
         this.teacherAssignmentRepository = teacherAssignmentRepository;
