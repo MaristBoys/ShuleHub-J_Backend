@@ -44,10 +44,11 @@ public class EmployeeProfileDTO {
     private String profileDescription;
 
     // Geografia
-    private Integer idDistrict;
+    private Short idDistrict;
     private String districtName;
-    private Integer idRegion;
+    private Short idRegion;
     private String regionName;
+    private Short idRegionGroup;
     private String regionGroupName;
 
     // Contatti Extra (JSON trasformato in lista di oggetti)
