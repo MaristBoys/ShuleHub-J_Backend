@@ -13,19 +13,25 @@ import lombok.Data;
         @UniqueConstraint(columnNames = {"id_yearroom", "id_subject"})
     }
 )
+
 @Data
+@Entity
+@Table(name = "cfg_yearroom_subject_teacher")
 public class TeacherAssignment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, updatable = false)
     private Integer id;
 
-    @Column(name = "id_yearroom", nullable = false)
-    private Integer yearRoomId;
+    // RIMUOVI i campi Integer/Short semplici e usa le relazioni:
 
-    @Column(name = "id_subject")
-    private Short subjectId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_yearroom", nullable = false)
+    private YearRoom yearRoom; // Questo permette "JOIN ta.yearRoom"
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_subject")
+    private Subject subject;   // Questo permette "JOIN ta.subject"
 
     @Column(name = "is_class_teacher", nullable = false)
     private boolean classTeacher = false;
@@ -35,10 +41,6 @@ public class TeacherAssignment {
      * La colonna nel DB si chiama id_employee, ma punta alla PK id_person della tabella employees.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "id_employee", 
-        referencedColumnName = "id_person",
-        foreignKey = @ForeignKey(name = "fk_cyrts_employee") // Anche se non esplicita nello script, la definiamo per JPA
-    )
+    @JoinColumn(name = "id_employee", referencedColumnName = "id_person",foreignKey = @ForeignKey(name = "fk_cyrts_employee"))
     private Employee employee;
 }

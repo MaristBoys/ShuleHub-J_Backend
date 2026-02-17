@@ -13,9 +13,14 @@ public class YearRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "id_year")
-    private Short idYear;
+    // Invece di Short idYear, usiamo l'oggetto Year
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_year", nullable = false)
+    private Year year; 
 
-    @Column(name = "id_room")
-    private Short idRoom;
+    // Invece di Short idRoom, usiamo l'oggetto Room
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_room", nullable = false)
+    private Room room;
+    
 }

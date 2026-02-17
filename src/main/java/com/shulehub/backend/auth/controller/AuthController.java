@@ -94,7 +94,7 @@ public class AuthController {
              e.printStackTrace(); 
             return ResponseEntity.status(500)
                 .body(new ApiResponse<>(false, "Errore tecnico del server: " + e.getMessage(), null));
-}
+        }
     }
 }
 

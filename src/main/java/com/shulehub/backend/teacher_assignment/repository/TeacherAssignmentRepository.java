@@ -20,21 +20,20 @@ import java.util.UUID;
 public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssignment, Integer> {
 
     @Query("SELECT new com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO(" +
-           "yr.id, " +
-           "r.roomName, " +
-           "s.id, " +
-           "s.subjectNameKsw, " + 
-           "s.subjectNameEng, " + 
-           "s.subjectAbbr, " + 
-           "s.subjectDescription, " + 
-           "ta.isClassTeacher) " +
-           "FROM TeacherAssignment ta " +
-           "JOIN ta.yearRoom yr " +        // Navigazione della relazione @ManyToOne
-           "JOIN yr.room r " +             // Navigazione da YearRoom a Room
-           "JOIN ta.subject s " +          // Navigazione della relazione @ManyToOne
-           "WHERE ta.employee.id = :employeeId " +
-           "AND yr.year.id = :activeYearId") // Assicurati che in YearRoom il campo sia 'year'
-           
+       "yr.id, " +
+       "r.roomName, " +
+       "s.id, " +
+       "s.subjectNameKsw, " + 
+       "s.subjectNameEng, " + 
+       "s.subjectAbbr, " + 
+       "s.subjectDescription, " + 
+       "ta.classTeacher) " + 
+       "FROM TeacherAssignment ta " +
+       "JOIN ta.yearRoom yr " +
+       "JOIN yr.room r " +
+       "JOIN ta.subject s " +
+       "WHERE ta.employee.id = :employeeId " +
+       "AND yr.year.id = :activeYearId")
     List<TeacherAssignmentDTO> findTeacherContext(
             @Param("employeeId") UUID employeeId, 
             @Param("activeYearId") Short activeYearId
