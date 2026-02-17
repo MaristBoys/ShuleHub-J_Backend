@@ -77,19 +77,19 @@ public class EmployeeProfileView {
 
     // --- DATI GEOGRAFICI ---
     @Column(name = "id_district")
-    private Integer idDistrict;
+    private Short idDistrict;
 
     @Column(name = "district_name")
     private String districtName;
 
     @Column(name = "id_region")
-    private Integer idRegion;
+    private Short idRegion;
 
     @Column(name = "region_name")
     private String regionName;
 
     @Column(name = "id_region_group")
-    private Integer idRegionGroup;
+    private Short idRegionGroup;
 
     @Column(name = "region_group_name")
     private String regionGroupName;
