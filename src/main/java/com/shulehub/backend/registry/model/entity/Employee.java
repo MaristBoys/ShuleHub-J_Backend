@@ -29,7 +29,7 @@ public class Employee {
     @Column(name = "employee_is_active", nullable = false)
     private boolean employeeIsActive = true;
 
-    @Column(name = "note")
+    @Column(name = "note", columnDefinition = "text")
     private String note;
 
     @Column(name = "created_at", updatable = false)
