@@ -23,17 +23,17 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
            "yr.id, " +
            "r.roomName, " +
            "s.id, " +
-           "s.subjectNameKsw, " +  // Campo Swahili
-           "s.subjectNameEng, " +  // Campo Inglese
-           "s.subjectAbbr, " +     // Abbreviazione
-           "s.subjectDescription, " + // Descrizione
+           "s.subjectNameKsw, " + 
+           "s.subjectNameEng, " + 
+           "s.subjectAbbr, " + 
+           "s.subjectDescription, " + 
            "ta.isClassTeacher) " +
            "FROM TeacherAssignment ta " +
-           "JOIN YearRoom yr ON ta.yearRoomId = yr.id " +
-           "JOIN Room r ON yr.idRoom = r.id " +
-           "JOIN Subject s ON ta.idSubject = s.id " +
+           "JOIN ta.yearRoom yr " +        // Navigazione della relazione @ManyToOne
+           "JOIN yr.room r " +             // Navigazione da YearRoom a Room
+           "JOIN ta.subject s " +          // Navigazione della relazione @ManyToOne
            "WHERE ta.employee.id = :employeeId " +
-           "AND yr.idYear = :activeYearId")
+           "AND yr.year.id = :activeYearId") // Assicurati che in YearRoom il campo sia 'year'
            
     List<TeacherAssignmentDTO> findTeacherContext(
             @Param("employeeId") UUID employeeId, 
