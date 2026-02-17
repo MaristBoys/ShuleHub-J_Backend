@@ -1,4 +1,4 @@
-package com.shulehub.backend.auth.model.entity; // <--- Indispensabile per Maven
+package com.shulehub.backend.auth.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

@@ -5,11 +5,12 @@ import java.util.Set;
 import java.util.UUID;
 
 @Data
-public class UserAuthDTO {
+public class UserAuthDTO { //popolato dal service
     private UUID userId;
     private String username;
     private String email;
-    private String profileName; // Preso dal descrittivo della vista
-    private Set<String> permissions; // Popolato dal Service
-    private TeacherContextDTO teacherContext; // Popolato solo se Teacher
+    private Short profileId;
+    private String profileName; 
+    private Set<String> permissions; 
+    private TeacherContextDTO teacherContext; 
 }

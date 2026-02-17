@@ -24,12 +24,25 @@ public class User {
     @Column(name = "user_is_active")
     private boolean userIsActive = true;
 
-    @Column(name = "id_profile", nullable = false)
-    private Short idProfile;
+    // hibernate fa la query per recuperare la classe profile che mappa ref_profile tramite annotazione @ManyToOne(fetch = FetchType.EAGER);
+    // EAGER significa che lo recupera fin da subito mentre LAZY quando il dato è richiesto con una seconda query
+
+    @ManyToOne(fetch = FetchType.EAGER) 
+    @JoinColumn(name = "id_profile", nullable = false)
+    private Profile profile;  //oggetto profile della classe Profile
 
     @Column(name = "google_name")
     private String googleName;
 
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "note")
+    private String note; // Campo correttamente inserito
+
+    // Changelog se dovesse servire in futuro come String o JsonNode
+    // private String changelog;
 }

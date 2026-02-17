@@ -1,8 +1,13 @@
-package com.shulehub.backend.auth.model.entity;
+package com.shulehub.backend.registry.model.view;
 
+import com.shulehub.backend.registry.model.dto.ContactItem;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.List;
 import java.util.UUID;
 import java.time.LocalDate;
 
@@ -11,6 +16,7 @@ import java.time.LocalDate;
 @Immutable
 @Data
 public class EmployeeProfileView {
+
     @Id
     @Column(name = "employee_id")
     private UUID employeeId;
@@ -45,11 +51,14 @@ public class EmployeeProfileView {
     @Column(name = "gender_label")
     private String genderLabel;
 
+    // --- DATI USER / AUTH ---
     @Column(name = "user_id")
     private UUID userId;
 
     private String username;
-    private String email;
+
+    @Column(name = "login_email")
+    private String loginEmail;
 
     @Column(name = "user_is_active")
     private boolean userIsActive;
@@ -65,4 +74,28 @@ public class EmployeeProfileView {
 
     @Column(name = "profile_des")
     private String profileDescription;
+
+    // --- DATI GEOGRAFICI ---
+    @Column(name = "id_district")
+    private Integer idDistrict;
+
+    @Column(name = "district_name")
+    private String districtName;
+
+    @Column(name = "id_region")
+    private Integer idRegion;
+
+    @Column(name = "region_name")
+    private String regionName;
+
+    @Column(name = "id_region_group")
+    private Integer idRegionGroup;
+
+    @Column(name = "region_group_name")
+    private String regionGroupName;
+
+    // --- CONTATTI EXTRA ---
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "extra_contacts")
+    private List<ContactItem> extraContacts;
 }

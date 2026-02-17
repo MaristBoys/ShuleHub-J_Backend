@@ -1,5 +1,6 @@
-package com.shulehub.backend.auth.repository; 
-import com.shulehub.backend.auth.model.entity.EmployeeProfileView;
+package com.shulehub.backend.registry.repository;
+
+import com.shulehub.backend.registry.model.view.EmployeeProfileView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
