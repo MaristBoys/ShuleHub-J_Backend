@@ -1,6 +1,8 @@
 package com.shulehub.backend.teacher_assignment.model.entity;
 
 import com.shulehub.backend.registry.model.entity.Employee;
+import com.shulehub.backend.school_config.model.entity.YearRoom;
+import com.shulehub.backend.subject.model.entity.Subject;     
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -15,8 +17,6 @@ import lombok.Data;
 )
 
 @Data
-@Entity
-@Table(name = "cfg_yearroom_subject_teacher")
 public class TeacherAssignment {
 
     @Id
@@ -41,6 +41,6 @@ public class TeacherAssignment {
      * La colonna nel DB si chiama id_employee, ma punta alla PK id_person della tabella employees.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_employee", referencedColumnName = "id_person",foreignKey = @ForeignKey(name = "fk_cyrts_employee"))
+    @JoinColumn(name = "id_employee", referencedColumnName = "id_person")
     private Employee employee;
 }

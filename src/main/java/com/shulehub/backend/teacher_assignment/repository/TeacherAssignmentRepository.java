@@ -2,6 +2,9 @@ package com.shulehub.backend.teacher_assignment.repository;
 
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
 import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
+import com.shulehub.backend.school_config.model.entity.YearRoom; // Aggiunto
+import com.shulehub.backend.subject.model.entity.Subject;      // Aggiunto
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

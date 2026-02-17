@@ -5,6 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+// Import delle entità correlate
+import com.shulehub.backend.school_config.model.entity.Year; 
+import com.shulehub.backend.school_config.model.entity.Room;
+
+
 @Entity
 @Table(name = "cfg_year_room")
 @Data
