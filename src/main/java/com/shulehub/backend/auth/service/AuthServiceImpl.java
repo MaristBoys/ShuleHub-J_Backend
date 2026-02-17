@@ -87,7 +87,7 @@ public class AuthServiceImpl implements AuthService {
         authDto.setProfileId(user.getProfile().getId()); // Short recuperato tramite associazione ORM
 
         // 4. Recupero permessi tramite Query JPQL esplicita
-        Set<String> permissions = permissionRepository.findNamesByProfileId(user.getProfile().getId());
+        Set<String> permissions = permissionRepository.findCodesByProfileId(user.getProfile().getId());
         authDto.setPermissions(permissions);
 
         // 5. Gestione del contesto specifico per il profilo TEACHER
