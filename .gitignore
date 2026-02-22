@@ -9,10 +9,11 @@ target/
 .idea/
 *.iml
 
-# --- CONFIGURAZIONI SENSIBILI (Fondamentale!) ---
-# Esclude application.properties: le credenziali reali e i dati sensibili (Database, API Keys, JWT Secret)
-# Usa application.properties.example come modello.
-src/main/resources/application.properties
+# --- CONFIGURAZIONI SENSIBILI ---
+# Esclude il file .env: contiene variabili d'ambiente locali, come JWT_SECRET_ENV, che non devono essere condivise.
+# mentre non esclude application.properties, che è necessario per la configurazione generale e non contiene dati sensibili (usa application.properties.example come modello).
+# src/main/resources/application.properties // è incluso perché contiene la configurazione generale, ma non dovrebbe contenere segreti.
+.env
 
 # --- SISTEMA OPERATIVO ---
 .DS_Store

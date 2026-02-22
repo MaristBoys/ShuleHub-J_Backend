@@ -14,7 +14,8 @@ import java.util.Map;
 @Component
 public class JwtUtils {
 
-    @Value("${JWT_SECRET_ENV}")
+    @Value("${shulehub.jwt.secret}") // Punta alla proprietà nel file .properties
+    // @Value("${JWT_SECRET_ENV}") //punta diretto alla variabile d'ambiente    
     private String jwtSecret;
 
     private static final long JWT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
