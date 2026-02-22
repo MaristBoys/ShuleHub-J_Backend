@@ -39,7 +39,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/wakeup", "/api/auth/google-login").permitAll()
+                .requestMatchers("/api/auth/wakeup").permitAll() 
+                .requestMatchers("/api/auth/google-login").permitAll()
                 .anyRequest().authenticated()
             );
 
@@ -59,13 +60,14 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
             "http://localhost:5500",
             "http://127.0.0.1:5500",
+            "http://localhost:5173",
             "https://maristboys.github.io"
         ));
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept","X-Requested-With", "Origin"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Set-Cookie"));
+        configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
