@@ -85,49 +85,51 @@ public class AuthServiceImpl implements AuthService {
         Set<String> permissions = permissionRepository.findCodesByProfileId(user.getProfile().getId());
         authDto.setPermissions(permissions);
 
-        // 5. Gestione del contesto specifico per il profilo TEACHER
-        if ("TEACHER".equalsIgnoreCase(user.getProfile().getProfileName())) {
-        
-            // Recupero dell'anno scolastico attivo
+        // 5. Gestione Dinamica del Contesto Docente (Indipendente dal Profilo)
+        // Cerchiamo se l'utente è censito come Employee (Impiegato)
+        employeeRepository.findByUserId(user.getId()).ifPresent(employee -> {
+    
+            // Se l'impiegato non è attivo, non carichiamo il contesto (opzionale: potresti lanciare eccezione)
+            if (!employee.isEmployeeIsActive()) return;
+
+            // Recupero l'anno attivo per controllare le assegnazioni attuali
             Year activeYear = yearRepository.findByYearIsActiveTrue()
                 .orElseThrow(() -> new RuntimeException("Configurazione mancante: nessun anno scolastico attivo"));
 
-            // Usiamo il repository per trovare l'Employee. 
-            // Hibernate recupererà l'Employee e, grazie al mapping, 
-            // avremo accesso anche alla Person collegata se necessario.
-            Employee employee = employeeRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new UnauthorizedException("Profilo docente non configurato: record impiegato mancante per l'utente " + user.getUsername()));
-
-            // Verifichiamo se l'impiegato è attivo (usando il campo booleano della tabella employees)
-            if (!employee.isEmployeeIsActive()) {
-                throw new UnauthorizedException("Accesso negato: il contratto del docente risulta disattivato.");
-            }
-
-            // Recupero delle assegnazioni (Classi/Materie) usando l'ID dell'impiegato (che è l'UUID della persona)
+            // Recupero le assegnazioni (Classi/Materie)
             List<TeacherAssignmentDTO> assignments = teacherAssignmentRepository
                 .findTeacherContext(employee.getId(), activeYear.getId());
 
-            TeacherContextDTO teacherCtx = new TeacherContextDTO();
-            teacherCtx.setAssignments(assignments);
+            // SE l'impiegato ha effettivamente delle classi assegnate (è un docente "di fatto")
+            if (!assignments.isEmpty()) {
+                TeacherContextDTO teacherCtx = new TeacherContextDTO();
+                teacherCtx.setAssignments(assignments);
 
-            // Estraggo gli ID delle classi dove il docente è coordinatore (Class Teacher)
-            Set<Integer> classTeacherRoomIds = assignments.stream()
-                .filter(TeacherAssignmentDTO::isClassTeacher)   // "Prendi ogni oggetto della lista, chiama il metodo getter isClassTeacher() che Lombok ha creato per me, e se restituisce true tienilo".
-                .map(TeacherAssignmentDTO::getYearRoomId)       // "mappare" significa trasformare. "Per ogni oggetto che è sopravvissuto al filtro, prendi il suo ID della classe e passalo allo step successivo"
+                // Identifico dove è coordinatore
+                Set<Integer> classTeacherRoomIds = assignments.stream()
+                    .filter(TeacherAssignmentDTO::isClassTeacher)   // "Prendi ogni oggetto della lista, chiama il metodo getter isClassTeacher() che Lombok ha creato per me, e se restituisce true tienilo".
+                    .map(TeacherAssignmentDTO::getYearRoomId)       // "mappare" significa trasformare. "Per ogni oggetto che è sopravvissuto al filtro, prendi il suo ID della classe e passalo allo step successivo"
                                                                 //lo Stream passa da essere uno Stream<TeacherAssignmentDTO> a uno Stream<Integer>
-                .collect(Collectors.toSet());                   // .collect() dice allo Stream di fermarsi e raccogliere tutto ciò che è rimasto.
+                    .collect(Collectors.toSet());                   // .collect() dice allo Stream di fermarsi e raccogliere tutto ciò che è rimasto.
                                                                 // Collectors.toSet() specifica che vogliamo i risultati dentro un Set (set no duplicati)
-    
-            teacherCtx.setClassTeacherRoomIds(classTeacherRoomIds);
-        
-            // Collego il contesto docente al DTO principale
-            authDto.setTeacherContext(teacherCtx);
-        
-       
-        }
 
+                teacherCtx.setClassTeacherRoomIds(classTeacherRoomIds);
+
+                // Collego il contesto al DTO
+                authDto.setTeacherContext(teacherCtx);
+
+                // --- IL TOCCO DI CLASSE ---
+                // Aggiungiamo dinamicamente il permesso di vedere la parte "Teacher" 
+                // anche se il suo profilo primario è un altro (es. SECRETARY)
+                authDto.getPermissions().add("ACCESS_TEACHER_AREA");
+            }   
+        });
+    
         return authDto;
-    }
+    }   
+
+
+
 
     @Override
     public void verifyGoogleToken(String idTokenString) throws Exception {
