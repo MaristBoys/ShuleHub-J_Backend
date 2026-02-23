@@ -2,8 +2,6 @@ package com.shulehub.backend.registry.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;

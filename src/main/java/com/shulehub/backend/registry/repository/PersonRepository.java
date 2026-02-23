@@ -18,8 +18,9 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
 
     // 2. Ricerca per Nome Completo (Sfrutta l'indice GIN full_name_trgm di Postgres)
     // Usiamo una query nativa per sfruttare l'operatore ILIKE o % (trigram search)
-    @Query(value = "SELECT * FROM persons WHERE full_name ILIKE %:searchTerm%", nativeQuery = true)
+    @Query(value = "SELECT * FROM persons WHERE full_name ILIKE CONCAT('%', :searchTerm, '%')", nativeQuery = true)
     List<Person> searchByFullName(@Param("searchTerm") String searchTerm);
+
 
     // 3. Verifica esistenza per logica di business (es. prima di inserire un duplicato)
     boolean existsByIdUser(UUID idUser);

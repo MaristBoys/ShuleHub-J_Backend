@@ -12,7 +12,6 @@ import com.google.api.client.json.gson.GsonFactory;
 // --- Model: Entities & DTOs ---
 import com.shulehub.backend.auth.model.entity.User;
 import com.shulehub.backend.registry.model.entity.Employee;
-import com.shulehub.backend.registry.model.view.EmployeeProfileView;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.auth.model.dto.UserAuthDTO;
 import com.shulehub.backend.auth.model.dto.TeacherContextDTO;
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -63,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserAuthDTO loginWithGoogle(String email) {
+    public UserAuthDTO loginWithGoogle(String email, String pictureUrl) {
         // 1. Recupero dell'utente tramite email
         // Se l'email non esiste, lanciamo un'eccezione che verrà catturata dal GlobalExceptionHandler
         User user = userRepository.findByEmailIgnoreCase(email)
@@ -81,6 +79,7 @@ public class AuthServiceImpl implements AuthService {
         authDto.setUsername(user.getUsername());
         authDto.setProfileName(user.getProfile().getProfileName());
         authDto.setProfileId(user.getProfile().getId()); // Short recuperato tramite associazione ORM
+        authDto.setPictureUrl(pictureUrl); // Popoliamo la foto che arriva da Google
 
         // 4. Recupero permessi tramite Query JPQL esplicita
         Set<String> permissions = permissionRepository.findCodesByProfileId(user.getProfile().getId());

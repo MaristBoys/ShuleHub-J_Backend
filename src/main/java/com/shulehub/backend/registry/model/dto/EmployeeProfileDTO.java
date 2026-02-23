@@ -2,7 +2,6 @@ package com.shulehub.backend.registry.model.dto;
 
 //COSTRUITO SULLA BASE DELLA VISTA EmployeeProfileView
 
-import com.shulehub.backend.registry.model.dto.ContactItem;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

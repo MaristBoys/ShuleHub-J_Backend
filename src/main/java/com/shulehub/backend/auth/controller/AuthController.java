@@ -61,12 +61,14 @@ public class AuthController {
             String payloadBase64 = idTokenString.split("\\.")[1];
             byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(payloadBase64);
             JsonNode node = new ObjectMapper().readTree(decodedBytes);
+            
             String email = node.get("email").asText();
-
+            String googlePicture = node.has("picture") ? node.get("picture").asText() : null;
+       
             System.out.println("Email estratta dal token: [" + email + "]");
 
             // 4. Recupero i dati completi (UserAuthDTO) tramite il tuo service
-            UserAuthDTO authData = authService.loginWithGoogle(email);
+            UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture);
             System.out.println("Utente trovato nel DB: " + authData.getUsername());
 
             // 5. Genero il JWT interno

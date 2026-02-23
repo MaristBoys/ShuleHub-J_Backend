@@ -6,13 +6,15 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 // Import delle entità correlate
-import com.shulehub.backend.school_config.model.entity.Year; 
-import com.shulehub.backend.school_config.model.entity.Room;
+//import com.shulehub.backend.school_config.model.entity.Year; //stesso package, non serve import
+//import com.shulehub.backend.school_config.model.entity.Room;
 
 
 @Entity
 @Table(name = "cfg_year_room")
-@Data
+@Data // Genera Getter, Setter, toString, equals e hashCode
+@NoArgsConstructor  // Genera il costruttore vuoto richiesto da JPA (risolve l'import alert)
+@AllArgsConstructor // Genera il costruttore con tutti i campi (risolve l'import alert)
 public class YearRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

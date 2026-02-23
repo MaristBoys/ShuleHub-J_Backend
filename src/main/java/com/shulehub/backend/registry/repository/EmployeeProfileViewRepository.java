@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface EmployeeProfileViewRepository extends JpaRepository<EmployeeProfileView, String> {
+public interface EmployeeProfileViewRepository extends JpaRepository<EmployeeProfileView, java.util.UUID> {
     
     Optional<EmployeeProfileView> findByLoginEmailIgnoreCase(String loginEmail);
 }

@@ -7,7 +7,10 @@ import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "ref_permission")
-@Data
+@Data // Genera Getter, Setter, toString, equals e hashCode
+@NoArgsConstructor  // Genera il costruttore vuoto richiesto da JPA (risolve l'import alert)
+@AllArgsConstructor // Genera il costruttore con tutti i campi (risolve l'import alert)
+
 public class RefPermission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

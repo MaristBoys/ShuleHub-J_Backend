@@ -10,7 +10,8 @@ public class UserAuthDTO { //popolato dal service
     private String username;
     private String email;
     private Short profileId;
-    private String profileName; 
+    private String profileName;
+    private String pictureUrl; 
     private Set<String> permissions; 
     private TeacherContextDTO teacherContext; 
 }

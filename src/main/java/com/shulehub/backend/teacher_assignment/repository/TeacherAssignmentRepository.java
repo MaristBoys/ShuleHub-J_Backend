@@ -2,8 +2,8 @@ package com.shulehub.backend.teacher_assignment.repository;
 
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
 import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
-import com.shulehub.backend.school_config.model.entity.YearRoom; // Aggiunto
-import com.shulehub.backend.subject.model.entity.Subject;      // Aggiunto
+//import com.shulehub.backend.school_config.model.entity.YearRoom; // non serve più, la query ora fa tutto con i join
+//import com.shulehub.backend.subject.model.entity.Subject;      // non serve più, la query ora fa tutto con i join
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
