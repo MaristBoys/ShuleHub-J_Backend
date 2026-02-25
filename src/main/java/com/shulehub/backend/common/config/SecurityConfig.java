@@ -66,7 +66,8 @@ public class SecurityConfig {
             "http://127.0.0.1:5500",    // live server di VSCode
             "http://localhost:5173",  // Vite default port per sviluppo
             "http://localhost:4173",  // Vite default port per produzione
-            "https://maristboys.github.io"  // dominio di produzione (GitHub Pages)
+            "https://maristboys.github.io",  // dominio di produzione (GitHub Pages)
+            "https://shule-hub.vercel.app/"  // dominio di produzione (Vercel)
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
