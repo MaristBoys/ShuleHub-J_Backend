@@ -18,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.HttpMethod;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,6 +41,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // 1. IMPORTANTE: Permetti tutte le richieste OPTIONS (Pre-flight)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/wakeup").permitAll() 
                 .requestMatchers("/api/auth/google-login").permitAll()
                 .anyRequest().authenticated()
@@ -58,10 +62,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:5500",
-            "http://127.0.0.1:5500",
-            "http://localhost:5173",
-            "https://maristboys.github.io"
+            "http://localhost:5500",    // live server di VSCode
+            "http://127.0.0.1:5500",    // live server di VSCode
+            "http://localhost:5173",  // Vite default port per sviluppo
+            "http://localhost:4173",  // Vite default port per produzione
+            "https://maristboys.github.io"  // dominio di produzione (GitHub Pages)
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

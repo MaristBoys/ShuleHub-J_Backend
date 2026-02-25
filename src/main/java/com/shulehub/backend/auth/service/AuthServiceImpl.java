@@ -11,7 +11,7 @@ import com.google.api.client.json.gson.GsonFactory;
 
 // --- Model: Entities & DTOs ---
 import com.shulehub.backend.auth.model.entity.User;
-import com.shulehub.backend.registry.model.entity.Employee;
+//import com.shulehub.backend.registry.model.entity.Employee;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.auth.model.dto.UserAuthDTO;
 import com.shulehub.backend.auth.model.dto.TeacherContextDTO;
