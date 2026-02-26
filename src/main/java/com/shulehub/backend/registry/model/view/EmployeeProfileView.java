@@ -36,6 +36,9 @@ public class EmployeeProfileView {
     @Column(name = "homeplace_village")
     private String homeplaceVillage;
 
+    @Column(name = "is_visible")
+    private boolean isVisible;
+
     @Column(name = "hire_date")
     private LocalDate hireDate;
 
