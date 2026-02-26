@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserAuthDTO loginWithGoogle(String email, String pictureUrl) {
+    public UserAuthDTO loginWithGoogle(String email, String pictureUrl, String googleName) {
         // 1. Recupero dell'utente tramite email
         // Se l'email non esiste, lanciamo un'eccezione che verrà catturata dal GlobalExceptionHandler
         User user = userRepository.findByEmailIgnoreCase(email)
@@ -72,6 +72,25 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Account disabled");
         }
 
+        // --- LOGICA DI AGGIORNAMENTO DATI GOOGLE ---
+        // Verifichiamo se i dati sono cambiati rispetto al DB per evitare update inutili
+        boolean needsUpdate = false;
+
+        if (googleName != null && !googleName.equals(user.getGoogleName())) {
+            user.setGoogleName(googleName);
+            needsUpdate = true;
+        }
+
+        // Usiamo il nome del campo esatto che abbiamo definito nell'Entity: googlePictureUrl
+        if (pictureUrl != null && !pictureUrl.equals(user.getGooglePictureUrl())) {
+            user.setGooglePictureUrl(pictureUrl);
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            userRepository.save(user); // Sincronizziamo il DB
+        } 
+
         // 3. Creazione e popolazione del DTO
         UserAuthDTO authDto = new UserAuthDTO();
         authDto.setUserId(user.getId());
@@ -79,7 +98,8 @@ public class AuthServiceImpl implements AuthService {
         authDto.setUsername(user.getUsername());
         authDto.setProfileName(user.getProfile().getProfileName());
         authDto.setProfileId(user.getProfile().getId()); // Short recuperato tramite associazione ORM
-        authDto.setPictureUrl(pictureUrl); // Popoliamo la foto che arriva da Google
+        authDto.setPictureUrl(user.getGooglePictureUrl()); // Popoliamo la foto che arriva da Google
+        authDto.setGoogleName(user.getGoogleName());
 
         // 4. Recupero permessi tramite Query JPQL esplicita
         Set<String> permissions = permissionRepository.findCodesByProfileId(user.getProfile().getId());

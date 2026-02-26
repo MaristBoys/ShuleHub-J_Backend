@@ -21,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Recupera un utente attivo tramite email.
      * Metodo più sicuro per l'autenticazione.
      */
-    Optional<User> findByEmailIgnoreCaseAndUserIsActiveTrue(String email);
+    Optional<User> findByEmailIgnoreCaseAndUserIsActiveTrue(String email); //non usato al momento
 
     /**
      * Recupera tutti gli utenti appartenenti a un determinato profilo (es. "TEACHER").

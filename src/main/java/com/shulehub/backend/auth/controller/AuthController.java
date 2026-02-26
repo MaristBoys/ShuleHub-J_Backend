@@ -64,11 +64,13 @@ public class AuthController {
             
             String email = node.get("email").asText();
             String googlePicture = node.has("picture") ? node.get("picture").asText() : null;
-       
+            String googleName = node.has("name") ? node.get("name").asText() : null;
+
+
             System.out.println("Email estratta dal token: [" + email + "]");
 
             // 4. Recupero i dati completi (UserAuthDTO) tramite il tuo service
-            UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture);
+            UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture,googleName);
             System.out.println("Utente trovato nel DB: " + authData.getUsername());
 
             // 5. Genero il JWT interno

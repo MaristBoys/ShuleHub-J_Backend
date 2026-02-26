@@ -11,7 +11,8 @@ public class UserAuthDTO { //popolato dal service
     private String email;
     private Short profileId;
     private String profileName;
-    private String pictureUrl; 
+    private String googleName;
+    private String pictureUrl; //googlePictureUrl
     private Set<String> permissions; 
     private TeacherContextDTO teacherContext; 
 }

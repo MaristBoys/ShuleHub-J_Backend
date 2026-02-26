@@ -3,6 +3,9 @@ package com.shulehub.backend.auth.model.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.UUID;
+
+import com.shulehub.backend.registry.model.entity.Person;
+
 import java.time.OffsetDateTime;
 
 @Entity
@@ -13,13 +16,15 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    // --- RELAZIONE OBBLIGATORIA CON PERSON ---
+    @OneToOne(fetch = FetchType.LAZY) // LAZY perché non sempre ci serve l'intera anagrafica
+    @JoinColumn(name = "id_person", nullable = false, unique = true)
+    private Person person;
+
     private String username;
     
     @Column(nullable = false, unique = true)
     private String email;
-
-    @Column(name = "google_id", unique = true)
-    private String googleId;
 
     @Column(name = "user_is_active")
     private boolean userIsActive = true;
@@ -33,6 +38,9 @@ public class User {
 
     @Column(name = "google_name")
     private String googleName;
+
+    @Column(name = "google_picture_url", columnDefinition = "text")
+    private String googlePictureUrl;
 
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

@@ -16,9 +16,6 @@ public class Person {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "id_user", unique = true)
-    private UUID idUser;
-
     @Column(name = "first_name", length = 100, nullable = false)
     private String firstName;
 
@@ -47,6 +44,9 @@ public class Person {
     @Column(name = "homeplace_village", length = 100)
     private String homeplaceVillage;
 
+    @Column(name = "is_visible", nullable = false)
+    private boolean isVisible = true;
+    
     @Column(name = "is_employee", nullable = false)
     private boolean isEmployee = false;
 
