@@ -14,6 +14,11 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     // Questa query serve al tuo AuthService per trovare l'impiegato 
     // partendo dall'ID dello User che ha appena fatto login.
-    @Query("SELECT e FROM Employee e JOIN e.person p WHERE p.idUser = :userId")
-    Optional<Employee> findByUserId(@Param("userId") UUID userId);
+
+    
+    // Questa query serve al tuo AuthService per trovare l'impiegato , 
+    // dell'account Utente (User) che ha appena fatto login, 
+   
+    @Query("SELECT e FROM Employee e WHERE e.id = :personId")
+    Optional<Employee> findByPersonId(@Param("personId") UUID personId);
 }

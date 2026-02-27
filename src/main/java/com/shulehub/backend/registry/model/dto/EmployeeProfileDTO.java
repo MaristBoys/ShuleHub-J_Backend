@@ -17,6 +17,7 @@ public class EmployeeProfileDTO {
 
     // Identificativi
     private UUID employeeId;
+    private boolean isVisible;       
     private UUID userId;
 
     // Anagrafica Personale
@@ -37,6 +38,7 @@ public class EmployeeProfileDTO {
     private String username;
     private String loginEmail;
     private boolean userIsActive;
+    private String googlePictureUrl;
     private String googleName;
     private Short profileId;
     private String profileName;

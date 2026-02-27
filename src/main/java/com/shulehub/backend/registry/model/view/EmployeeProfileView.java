@@ -18,8 +18,8 @@ import java.time.LocalDate;
 public class EmployeeProfileView {
 
     @Id
-    @Column(name = "employee_id")
-    private UUID employeeId;
+    @Column(name = "id_employee")
+    private UUID idEmployee;
 
     @Column(name = "first_name")
     private String firstName;
@@ -35,6 +35,9 @@ public class EmployeeProfileView {
 
     @Column(name = "homeplace_village")
     private String homeplaceVillage;
+
+    @Column(name = "google_picture_url")
+    private String googlePictureUrl;
 
     @Column(name = "is_visible")
     private boolean isVisible;
@@ -55,8 +58,8 @@ public class EmployeeProfileView {
     private String genderLabel;
 
     // --- DATI USER / AUTH ---
-    @Column(name = "user_id")
-    private UUID userId;
+    @Column(name = "id_user")
+    private UUID idUser;
 
     private String username;
 
@@ -69,8 +72,8 @@ public class EmployeeProfileView {
     @Column(name = "google_name")
     private String googleName;
 
-    @Column(name = "profile_id")
-    private Short profileId;
+    @Column(name = "id_profile")
+    private Short idProfile;
 
     @Column(name = "profile_name")
     private String profileName;

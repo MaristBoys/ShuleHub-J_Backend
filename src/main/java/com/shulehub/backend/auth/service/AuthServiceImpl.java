@@ -107,10 +107,12 @@ public class AuthServiceImpl implements AuthService {
 
         // 5. Gestione Dinamica del Contesto Docente (Indipendente dal Profilo)
         // Cerchiamo se l'utente è censito come Employee (Impiegato)
-        employeeRepository.findByUserId(user.getId()).ifPresent(employee -> {
+        employeeRepository.findByPersonId(user.getPerson().getId()).ifPresent(employee -> {
     
-            // Se l'impiegato non è attivo, non carichiamo il contesto (opzionale: potresti lanciare eccezione)
-            if (!employee.isEmployeeIsActive()) return;
+            // Se l'impiegato non è attivo, non carichiamo il contesto docente, 
+            // if (!employee.isEmployeeIsActive()) return; 
+           // no carico comunque il contesto anche se l'impiegato è disabilitato, 
+           
 
             // Recupero l'anno attivo per controllare le assegnazioni attuali
             Year activeYear = yearRepository.findByYearIsActiveTrue()

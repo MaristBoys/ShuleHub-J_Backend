@@ -14,7 +14,7 @@ import java.util.UUID;
 public interface PersonRepository extends JpaRepository<Person, UUID> {
 
     // 1. Fondamentale per il collegamento con l'account Utente
-    Optional<Person> findByIdUser(UUID idUser);
+    Optional<Person> findById(UUID id);
 
     // 2. Ricerca per Nome Completo (Sfrutta l'indice GIN full_name_trgm di Postgres)
     // Usiamo una query nativa per sfruttare l'operatore ILIKE o % (trigram search)
@@ -23,7 +23,7 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
 
 
     // 3. Verifica esistenza per logica di business (es. prima di inserire un duplicato)
-    boolean existsByIdUser(UUID idUser);
+    boolean existsById(UUID id);
 
     // 4. Ricerca filtrata per ruolo (utile per liste rapide)
     List<Person> findByIsEmployeeTrue();
