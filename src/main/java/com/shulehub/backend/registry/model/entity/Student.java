@@ -2,14 +2,18 @@ package com.shulehub.backend.registry.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "employees", schema = "public")
+@Table(name = "students", schema = "public")
 @Data
-public class Employee {
+@NoArgsConstructor
+@AllArgsConstructor
+public class Student {
 
     @Id
     @Column(name = "id_person")
@@ -20,14 +24,20 @@ public class Employee {
     @JoinColumn(name = "id_person")
     private Person person;
 
-    @Column(name = "hire_date")
-    private LocalDate hireDate;
+    @Column(name = "enrollment_date")
+    private LocalDate enrollmentDate;
 
-    @Column(name = "employment_end_date")
-    private LocalDate employmentEndDate;
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
-    @Column(name = "employee_is_active", nullable = false)
-    private boolean employeeIsActive = true;
+    @Column(name = "is_dropped", nullable = false)
+    private boolean isDropped = false;
+
+    @Column(name = "dropped_date")
+    private LocalDate droppedDate;
+
+    @Column(name = "student_is_active", nullable = false)
+    private boolean studentIsActive = true;
 
     @Column(name = "note", columnDefinition = "text")
     private String note;
@@ -38,8 +48,6 @@ public class Employee {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    // Assicura che JPA gestisca correttamente i timestamp lato Java 
-    // in sincronia con i default del DB
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
@@ -49,5 +57,5 @@ public class Employee {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = OffsetDateTime.now();
-    }    
+    }
 }

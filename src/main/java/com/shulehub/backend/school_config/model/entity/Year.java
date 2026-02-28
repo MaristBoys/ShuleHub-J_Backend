@@ -15,6 +15,9 @@ public class Year {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Short id;
 
+    @Column(name = "year", nullable = false)
+    private Short year;
+
     @Column(name = "year_description")
     private String yearDescription;
 

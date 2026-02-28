@@ -1,6 +1,7 @@
 package com.shulehub.backend.registry.model.dto;
 
 //COSTRUITO SULLA BASE DELLA VISTA EmployeeProfileView
+//serve per la scheda profilo di dettaglio
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

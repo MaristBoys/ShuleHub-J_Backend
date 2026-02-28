@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,11 +15,16 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     // Questa query serve al tuo AuthService per trovare l'impiegato 
     // partendo dall'ID dello User che ha appena fatto login.
-
-    
-    // Questa query serve al tuo AuthService per trovare l'impiegato , 
-    // dell'account Utente (User) che ha appena fatto login, 
-   
     @Query("SELECT e FROM Employee e WHERE e.id = :personId")
     Optional<Employee> findByPersonId(@Param("personId") UUID personId);
+
+
+    // Conteggio per la card dashboard
+    long countByEmployeeIsActiveTrue();
+    // Conta chi è stato assunto tra il 01-01 e il 31-12 dell'anno scelto
+    long countByHireDateBetween(LocalDate start, LocalDate end);
+    // Conta chi ha terminato il rapporto tra il 01-01 e il 31-12 dell'anno scelto
+    long countByEmploymentEndDateBetween(LocalDate start, LocalDate end);
+
 }
+
