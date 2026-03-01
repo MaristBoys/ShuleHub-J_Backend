@@ -16,15 +16,16 @@ import com.shulehub.backend.audit.service.ActivityLogService; // 1. Import del s
 import jakarta.servlet.http.HttpServletRequest; // Import necessario per IP e Browser che serve le informazioni per il logging
 
 import com.shulehub.backend.common.exception.UnauthorizedException; // Per gestire il catch specifico
+import com.shulehub.backend.common.exception.UserDisabledException;
+import com.shulehub.backend.common.exception.UserNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper; // Per il parsing dell'email
 import com.fasterxml.jackson.databind.JsonNode;     // Per il parsing dell'email
 
-
+import java.util.Base64;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-// Nota: in produzione sostituisci "*" con l'URL del tuo frontend
 public class AuthController {
 
     private final AuthService authService;
@@ -48,41 +49,58 @@ public class AuthController {
         HttpServletResponse response,
         HttpServletRequest request) { // 4. Aggiunto HttpServletRequest
 
+        // Dichiarata fuori dal try per essere visibile nei catch
+        String email = "unknown"; // Default per il log in caso di errore prima del parsing
+        String googlePicture = null;
+        String googleName = null;
+
+
         // 1. Leggiamo idToken (come inviato dal frontend)
         String idTokenString = payload.get("token");
         
-        // 1. Dichiarata fuori dal try per essere visibile nei catch
-        String email = "unknown"; // Default per il log in caso di errore prima del parsing
-
+        // RISPOSTA CASO 1: Token totalmente mancante (Frontend non lo ha inviato)
         if (idTokenString == null || idTokenString.isEmpty()) {
-            return ResponseEntity.badRequest()
-                .body(new ApiResponse<>(false, "idToken mancante", null));
+            auditService.log("unknown", null, "AUTH_ERROR", "Chiamata senza token", request, null);
+        
+            return ResponseEntity.badRequest() // Metodo rapido per lo stato 400
+                .body(new ApiResponse<>(false, "Token Google non pervenuto", "ERR_MISSING_TOKEN"));
         }
 
         try {
-            // 2. Chiamiamo la verifica che hai già nel tuo AuthServiceImpl
-            //System.out.println("Tentativo di login con token: " + idTokenString.substring(0, 10) + "...");
+            // 1. Estrazione "grezza" e controllo immediato
+            try {
+                String payloadBase64 = idTokenString.split("\\.")[1];
+                JsonNode node = new ObjectMapper().readTree( Base64.getUrlDecoder().decode(payloadBase64));
+                
+                if (!node.has("email")) {
+                    throw new Exception("Email missing in token"); // Salta al catch interno
+                }
+                
+                email = node.get("email").asText();
+                // Possiamo già recuperare anche gli altri dati qui
+                googlePicture = node.has("picture") ? node.get("picture").asText() : null;
+                googleName = node.has("name") ? node.get("name").asText() : null;
+
+            } catch (Exception e) {
+                // Se il token è rotto o manca l'email, logghiamo e usciamo subito
+                auditService.log("unknown", null, "AUTH_ERROR", "Token malformato o email mancante", request, null);
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>(false, "Token non valido o incompleto", "ERR_MALFORMED_TOKEN"));
+            }
+            
+            
+            // 2. verifica del token (metodo presente nel AuthServiceImpl)
             authService.verifyGoogleToken(idTokenString);
-            //System.out.println("Verifica Google superata!");
-
-
-            // 3. Estraiamo l'email dal token (necessaria per il tuo loginWithGoogle)
-            String payloadBase64 = idTokenString.split("\\.")[1];
-            byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(payloadBase64);
-            JsonNode node = new ObjectMapper().readTree(decodedBytes);
+           
+            // 3. Estraiamo l'email dal token (vecchio metodo, ora abbiamo già l'email dal parsing precedente, ma lo lascio per chiarezza)
+            //String payloadBase64 = idTokenString.split("\\.")[1];
+            //byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(payloadBase64);
+            //JsonNode node = new ObjectMapper().readTree(decodedBytes);
             
-            email = node.get("email").asText();
-            String googlePicture = node.has("picture") ? node.get("picture").asText() : null;
-            String googleName = node.has("name") ? node.get("name").asText() : null;
-
-
-            System.out.println("Email estratta dal token: [" + email + "]");
-
-            // 4. Recupero i dati completi (UserAuthDTO) tramite il tuo service
+            // 4. Recupero i dati completi (UserAuthDTO) tramite il service
             UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture,googleName);
-            System.out.println("Utente trovato nel DB: " + authData.getUsername());
+            //System.out.println("Utente trovato nel DB: " + authData.getUsername());
 
-            
             // 5. LOG DI SUCCESSO
             auditService.log(email, authData.getUserId(), "AUTH_LOGIN_SUCCESS", 
                             "Login Google completato con successo", request, null);
@@ -103,22 +121,18 @@ public class AuthController {
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Login effettuato", authData));
 
+        } catch (UserNotFoundException e) {
+            auditService.log(email, null, "AUTH_USER_NOT_FOUND", e.getMessage(), request, null);
+            throw e;
+        } catch (UserDisabledException e) {
+            auditService.log(email, null, "AUTH_USER_DISABLED", e.getMessage(), request, null);
+            throw e;
         } catch (UnauthorizedException e) {
-            // 6. LOG DI ACCESSO NEGATO (Es. Utente non presente nel database ShuleHub)
-            auditService.log(email, null, "AUTH_LOGIN_UNAUTHORIZED", 
-                            "Tentativo di accesso fallito: " + e.getMessage(), request, null);
-            
-            return ResponseEntity.status(401)
-                    .body(new ApiResponse<>(false, e.getMessage(), null));
-
+            auditService.log(email, null, "AUTH_INVALID_TOKEN", e.getMessage(), request, null);
+            throw e;
         } catch (Exception e) {
-            // 7. LOG DI ERRORE DI SISTEMA (Es. Database offline)
-            auditService.log(email, null, "AUTH_SYSTEM_ERROR", 
-                            "Errore tecnico durante il login: " + e.getMessage(), request, null);
-            
-            e.printStackTrace(); 
-            return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false, "Errore tecnico del server", null));
+            auditService.log(email, null, "AUTH_SYSTEM_ERROR", e.getMessage(), request, null);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

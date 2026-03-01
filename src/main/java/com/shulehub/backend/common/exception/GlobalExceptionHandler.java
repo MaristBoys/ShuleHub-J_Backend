@@ -23,15 +23,31 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 1. Gestione specifica per Utente Non Trovato
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>(false, ex.getMessage(), "ERR_USER_NOT_FOUND"));
+    }
+
+    // 2. Gestione specifica per Utente Disabilitato
+    @ExceptionHandler(UserDisabledException.class)
+    public ResponseEntity<ApiResponse<String>> handleUserDisabled(UserDisabledException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse<>(false, ex.getMessage(), "ERR_USER_DISABLED"));
+    }
+
+    // 3. Gestione per Token Invalido (altre UnauthorizedException)
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<String>> handleUnauthorized(UnauthorizedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse<>(false, ex.getMessage(), null));
+                .body(new ApiResponse<>(false, ex.getMessage(), "ERR_INVALID_TOKEN"));
     }
 
+    // 4. Gestione Errori Generici di Runtime (500)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<String>> handleRuntime(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(false, "Errore interno del server: " + ex.getMessage(), null));
+                .body(new ApiResponse<>(false, "Errore interno del server", "ERR_INTERNAL_SERVER"));
     }
 }
