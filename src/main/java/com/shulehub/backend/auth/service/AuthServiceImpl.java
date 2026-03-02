@@ -24,9 +24,8 @@ import com.shulehub.backend.registry.repository.EmployeeRepository;
 import com.shulehub.backend.auth.repository.PermissionRepository;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
-
-// --- Exceptions ---
-import com.shulehub.backend.common.exception.UnauthorizedException;
+import com.shulehub.backend.common.exception.auth.InvalidGoogleTokenException;
+import com.shulehub.backend.common.exception.auth.UnauthorizedException;
 
 // --- Java Utils ---
 import java.util.Collections;
@@ -154,15 +153,23 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
-    public void verifyGoogleToken(String idTokenString) throws Exception {
+    public void verifyGoogleToken(String idTokenString) {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList(CLIENT_ID))
-                .setAcceptableTimeSkewSeconds(30) // <--- aggiunge tolleranza fra orologio render e orologio Google
+                .setAcceptableTimeSkewSeconds(30) // tolleranza orologio
                 .build();
 
-        GoogleIdToken idToken = verifier.verify(idTokenString);
+        GoogleIdToken idToken;
+        try {
+            idToken = verifier.verify(idTokenString);
+        } catch (Exception e) {
+            // Qualsiasi errore di parsing/HTTP viene convertito in AuthException
+            throw new InvalidGoogleTokenException("Errore nella verifica del token Google");
+        }
+
         if (idToken == null) {
-            throw new UnauthorizedException("Token Google non valido o scaduto");
+            // Token non valido o scaduto
+            throw new InvalidGoogleTokenException("Token Google non valido o scaduto");
         }
     }
 }

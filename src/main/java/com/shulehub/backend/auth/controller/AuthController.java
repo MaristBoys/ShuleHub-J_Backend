@@ -1,25 +1,18 @@
-//  riceve le chiamate dal frontend 
-
 package com.shulehub.backend.auth.controller;
 
 import com.shulehub.backend.auth.model.dto.UserAuthDTO;
 import com.shulehub.backend.auth.service.AuthService;
 import com.shulehub.backend.auth.utils.JwtUtils;
+import com.shulehub.backend.common.exception.auth.InvalidGoogleTokenException;
+import com.shulehub.backend.common.exception.auth.MissingTokenException;
 import com.shulehub.backend.common.response.ApiResponse;
+import com.shulehub.backend.audit.service.ActivityLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.shulehub.backend.audit.service.ActivityLogService; // 1. Import del servizio per il logging
-import jakarta.servlet.http.HttpServletRequest; // Import necessario per IP e Browser che serve le informazioni per il logging
-
-import com.shulehub.backend.common.exception.UnauthorizedException; // Per gestire il catch specifico
-import com.shulehub.backend.common.exception.UserDisabledException;
-import com.shulehub.backend.common.exception.UserNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper; // Per il parsing dell'email
-import com.fasterxml.jackson.databind.JsonNode;     // Per il parsing dell'email
 
 import java.util.Base64;
 import java.util.Map;
@@ -30,7 +23,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtUtils jwtUtils;
-    private final ActivityLogService auditService; // 2. Dichiarazione servizio audit
+    private final ActivityLogService auditService;
 
     public AuthController(AuthService authService, JwtUtils jwtUtils, ActivityLogService auditService) {
         this.authService = authService;
@@ -38,146 +31,104 @@ public class AuthController {
         this.auditService = auditService;
     }
 
+    // --- Endpoint per svegliare il backend (utile su hosting come Render) ---
     @GetMapping("/wakeup")
     public ResponseEntity<String> wakeup() {
         return ResponseEntity.ok("Backend is awake and running!");
     }
 
+    // --- Endpoint di login con Google ---
     @PostMapping("/google-login")
     public ResponseEntity<ApiResponse<?>> googleLogin(
-        @RequestBody Map<String, String> payload,
-        HttpServletResponse response,
-        HttpServletRequest request) { // 4. Aggiunto HttpServletRequest
+            @RequestBody Map<String, String> payload,
+            HttpServletResponse response,
+            HttpServletRequest request) {
 
-        // Dichiarata fuori dal try per essere visibile nei catch
-        String email = "unknown"; // Default per il log in caso di errore prima del parsing
+        // 1 Controllo token mancante
+        String idTokenString = payload.get("token");
+        if (idTokenString == null || idTokenString.isEmpty()) {
+            throw new MissingTokenException("Token Google non pervenuto");
+        }
+
+        // 2 Estrazione email, nome e picture dal token
+        String email;
         String googlePicture = null;
         String googleName = null;
 
-
-        // 1. Leggiamo idToken (come inviato dal frontend)
-        String idTokenString = payload.get("token");
-        
-        // RISPOSTA CASO 1: Token totalmente mancante (Frontend non lo ha inviato)
-        if (idTokenString == null || idTokenString.isEmpty()) {
-            auditService.log("unknown", null, "AUTH_ERROR", "Chiamata senza token", request, null);
-        
-            return ResponseEntity.badRequest() // Metodo rapido per lo stato 400
-                .body(new ApiResponse<>(false, "Token Google non pervenuto", "ERR_MISSING_TOKEN"));
-        }
-
         try {
-            // 1. Estrazione "grezza" e controllo immediato
-            try {
-                String payloadBase64 = idTokenString.split("\\.")[1];
-                JsonNode node = new ObjectMapper().readTree( Base64.getUrlDecoder().decode(payloadBase64));
-                
-                if (!node.has("email")) {
-                    throw new Exception("Email missing in token"); // Salta al catch interno
-                }
-                
-                email = node.get("email").asText();
-                // Possiamo già recuperare anche gli altri dati qui
-                googlePicture = node.has("picture") ? node.get("picture").asText() : null;
-                googleName = node.has("name") ? node.get("name").asText() : null;
+            var node = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree(Base64.getUrlDecoder().decode(idTokenString.split("\\.")[1]));
 
-            } catch (Exception e) {
-                // Se il token è rotto o manca l'email, logghiamo e usciamo subito
-                auditService.log("unknown", null, "AUTH_ERROR", "Token malformato o email mancante", request, null);
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "Token non valido o incompleto", "ERR_MALFORMED_TOKEN"));
+            if (!node.has("email")) {
+                throw new InvalidGoogleTokenException("Email mancante nel token");
             }
-            
-            
-            // 2. verifica del token (metodo presente nel AuthServiceImpl)
-            authService.verifyGoogleToken(idTokenString);
-           
-            // 3. Estraiamo l'email dal token (vecchio metodo, ora abbiamo già l'email dal parsing precedente, ma lo lascio per chiarezza)
-            //String payloadBase64 = idTokenString.split("\\.")[1];
-            //byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(payloadBase64);
-            //JsonNode node = new ObjectMapper().readTree(decodedBytes);
-            
-            // 4. Recupero i dati completi (UserAuthDTO) tramite il service
-            UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture,googleName);
-            //System.out.println("Utente trovato nel DB: " + authData.getUsername());
 
-            // 5. LOG DI SUCCESSO
-            auditService.log(email, authData.getUserId(), "AUTH_LOGIN_SUCCESS", 
-                            "Login Google completato con successo", request, null);
-            
-            // 5.1 Genero il JWT interno
-            String jwt = jwtUtils.generateToken(email);
-
-            // 5.2 Creo il Cookie (Usa "None" se frontend e backend sono su domini diversi)
-            ResponseCookie cookie = ResponseCookie.from("shulehub_token", jwt)
-                    .httpOnly(true)
-                    .secure(true) 
-                    .path("/")
-                    .maxAge(86400)
-                    .sameSite("None") // Fondamentale per Render + Frontend esterno
-                    .build();
-
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-
-            return ResponseEntity.ok(new ApiResponse<>(true, "Login effettuato", authData));
-
-        } catch (UserNotFoundException e) {
-            auditService.log(email, null, "AUTH_USER_NOT_FOUND", e.getMessage(), request, null);
-            throw e;
-        } catch (UserDisabledException e) {
-            auditService.log(email, null, "AUTH_USER_DISABLED", e.getMessage(), request, null);
-            throw e;
-        } catch (UnauthorizedException e) {
-            auditService.log(email, null, "AUTH_INVALID_TOKEN", e.getMessage(), request, null);
-            throw e;
+            email = node.get("email").asText();
+            googlePicture = node.has("picture") ? node.get("picture").asText() : null;
+            googleName = node.has("name") ? node.get("name").asText() : null;
         } catch (Exception e) {
-            auditService.log(email, null, "AUTH_SYSTEM_ERROR", e.getMessage(), request, null);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new InvalidGoogleTokenException("Token Google malformato");
         }
+
+        // 3 Verifica token con Google
+        authService.verifyGoogleToken(idTokenString);
+
+        // 4 Recupero dati utente tramite service
+        UserAuthDTO authData = authService.loginWithGoogle(email, googlePicture, googleName);
+
+        // 5 Log di successo
+        auditService.log(email, authData.getUserId(), "AUTH_LOGIN_SUCCESS",
+                "Login Google completato con successo", request, null);
+
+        // 6 Generazione JWT e cookie
+        String jwt = jwtUtils.generateToken(email);
+        ResponseCookie cookie = ResponseCookie.from("shulehub_token", jwt)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(86400)
+                .sameSite("None")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        //  Risposta al frontend
+        return ResponseEntity.ok(new ApiResponse<>(true, "Login effettuato", authData));
     }
 
-
-
+    // --- Endpoint di logout ---
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(
-            HttpServletRequest request, 
+            HttpServletRequest request,
             HttpServletResponse response) {
-        
+
         String email = "unknown";
-        
-        // 1. Cerchiamo di recuperare l'email dal JWT prima di cancellarlo per il log
-        try {
-            // Cerchiamo il cookie shulehub_token
-            if (request.getCookies() != null) {
-                for (var cookie : request.getCookies()) {
-                    if ("shulehub_token".equals(cookie.getName())) {
-                        String token = cookie.getValue();
-                        email = jwtUtils.getEmailFromToken(token); 
-                        break;
-                    }
+
+        // 1 Recupero email dal cookie se presente
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("shulehub_token".equals(cookie.getName())) {
+                    try {
+                        email = jwtUtils.getEmailFromToken(cookie.getValue());
+                    } catch (Exception ignored) {}
+                    break;
                 }
             }
-        } catch (Exception e) {
-            // Se fallisce il recupero email, logghiamo come unknown
         }
 
-        // 2. Scriviamo il log di Logout
+        // 2 Log di logout
         auditService.log(email, null, "AUTH_LOGOUT", "Logout effettuato dall'utente", request, null);
 
-        // 3. Creiamo un cookie "vuoto" con scadenza immediata per cancellarlo dal browser
+        // 3 Cancellazione cookie
         ResponseCookie deleteCookie = ResponseCookie.from("shulehub_token", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(0) // Scade ora, quindi viene rimosso
+                .maxAge(0)
                 .sameSite("None")
                 .build();
-
         response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
 
+        // 4 Risposta al frontend
         return ResponseEntity.ok(new ApiResponse<>(true, "Logout effettuato con successo", null));
     }
-
 }
-
-

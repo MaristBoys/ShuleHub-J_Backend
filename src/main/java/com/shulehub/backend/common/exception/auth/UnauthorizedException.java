@@ -1,4 +1,4 @@
-package com.shulehub.backend.common.exception;
+package com.shulehub.backend.common.exception.auth;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

@@ -7,5 +7,5 @@ public interface AuthService {
     UserAuthDTO loginWithGoogle(String email, String pictureUrl, String googleName);
     // Se ti serve ancora il metodo per verificare il token, dichiaralo qui 
     // ma la logica andrà nell'impl
-    void verifyGoogleToken(String idTokenString) throws Exception;
+    void verifyGoogleToken(String idTokenString);
 }
