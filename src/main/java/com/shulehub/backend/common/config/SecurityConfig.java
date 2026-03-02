@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/wakeup").permitAll() 
                 .requestMatchers("/api/auth/google-login").permitAll()
+                .requestMatchers("/api/auth/logout").permitAll() //
                 .anyRequest().authenticated()
             );
 
@@ -67,7 +68,7 @@ public class SecurityConfig {
             "http://localhost:5173",  // Vite default port per sviluppo
             "http://localhost:4173",  // Vite default port per produzione
             "https://maristboys.github.io",  // dominio di produzione (GitHub Pages)
-            "https://shule-hub.vercel.app/"  // dominio di produzione (Vercel)
+            "https://shule-hub.vercel.app"  // dominio di produzione (Vercel)
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
