@@ -25,7 +25,8 @@ import com.shulehub.backend.auth.repository.PermissionRepository;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
 import com.shulehub.backend.common.exception.auth.InvalidGoogleTokenException;
-import com.shulehub.backend.common.exception.auth.UnauthorizedException;
+import com.shulehub.backend.common.exception.auth.UserDisabledException;
+import com.shulehub.backend.common.exception.auth.UserNotFoundException;
 
 // --- Java Utils ---
 import java.util.Collections;
@@ -64,11 +65,11 @@ public class AuthServiceImpl implements AuthService {
         // 1. Recupero dell'utente tramite email
         // Se l'email non esiste, lanciamo un'eccezione che verrà catturata dal GlobalExceptionHandler
         User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new UnauthorizedException("Accesso negato: email non censita nel sistema."));
+                .orElseThrow(() -> new UserNotFoundException("Accesso negato: email non censita nel sistema.", email));
 
         // 2. Controllo stato utente (Active/Disabled)
         if (!user.isUserIsActive()) {
-            throw new UnauthorizedException("Account disabled");
+            throw new UserDisabledException("Account disabled", email);
         }
 
         // --- LOGICA DI AGGIORNAMENTO DATI GOOGLE ---
@@ -164,12 +165,12 @@ public class AuthServiceImpl implements AuthService {
             idToken = verifier.verify(idTokenString);
         } catch (Exception e) {
             // Qualsiasi errore di parsing/HTTP viene convertito in AuthException
-            throw new InvalidGoogleTokenException("Errore nella verifica del token Google");
+            throw new InvalidGoogleTokenException("Errore nella verifica del token Google", "unknown");
         }
 
         if (idToken == null) {
             // Token non valido o scaduto
-            throw new InvalidGoogleTokenException("Token Google non valido o scaduto");
+            throw new InvalidGoogleTokenException("Token Google non valido o scaduto", "unknown");
         }
     }
 }

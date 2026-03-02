@@ -47,11 +47,11 @@ public class AuthController {
         // 1 Controllo token mancante
         String idTokenString = payload.get("token");
         if (idTokenString == null || idTokenString.isEmpty()) {
-            throw new MissingTokenException("Token Google non pervenuto");
+            throw new MissingTokenException("Token Google non pervenuto", "unknown");
         }
 
         // 2 Estrazione email, nome e picture dal token
-        String email;
+        String email="unknown";
         String googlePicture = null;
         String googleName = null;
 
@@ -60,14 +60,14 @@ public class AuthController {
                     .readTree(Base64.getUrlDecoder().decode(idTokenString.split("\\.")[1]));
 
             if (!node.has("email")) {
-                throw new InvalidGoogleTokenException("Email mancante nel token");
+                throw new InvalidGoogleTokenException("Email mancante nel token", email);
             }
 
             email = node.get("email").asText();
             googlePicture = node.has("picture") ? node.get("picture").asText() : null;
             googleName = node.has("name") ? node.get("name").asText() : null;
         } catch (Exception e) {
-            throw new InvalidGoogleTokenException("Token Google malformato");
+            throw new InvalidGoogleTokenException("Token Google malformato", email);
         }
 
         // 3 Verifica token con Google

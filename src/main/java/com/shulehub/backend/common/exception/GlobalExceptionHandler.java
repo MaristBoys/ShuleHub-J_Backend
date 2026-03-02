@@ -35,9 +35,13 @@ public class GlobalExceptionHandler {
     // --- 1 Gestione centralizzata eccezioni di autenticazione (audit + response) ---
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<ApiResponse<String>> handleAuthException(AuthException ex, HttpServletRequest request) {
+        
+        // Recuperiamo l'email dall'eccezione. Se è null (es. token mancante), usiamo "unknown"
+        String emailToLog = (ex.getEmail() != null) ? ex.getEmail() : "unknown";
+        
         // Log attività utente
         auditService.log(
-                "unknown", // se l’email non è nota dal token, altrimenti può essere passato
+                emailToLog, 
                 null,
                 ex.getErrorCode(),  // usa l’errorCode dell’eccezione come evento di audit
                 ex.getMessage(),
