@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -81,7 +82,9 @@ public class AuthController {
                 "Login Google completato con successo", request, null);
 
         // 6 Generazione JWT e cookie
-        String jwt = jwtUtils.generateToken(email);
+        // generazione del token JWT con email e userId presi da authData, che è un DTO che contiene le informazioni dell'utente recuperate o create durante il login
+        String jwt = jwtUtils.generateToken(authData.getEmail(), authData.getUserId());
+        // generazione del cookie HTTP-only con il token JWT, che sarà inviato al client e usato per autenticare le richieste future
         ResponseCookie cookie = ResponseCookie.from("shulehub_token", jwt)
                 .httpOnly(true)
                 .secure(true)
@@ -102,21 +105,23 @@ public class AuthController {
             HttpServletResponse response) {
 
         String email = "unknown";
+        UUID userId = null;
 
-        // 1 Recupero email dal cookie se presente
+        // 1 Recupero email e userId dal cookie se presente
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("shulehub_token".equals(cookie.getName())) {
-                    try {
-                        email = jwtUtils.getEmailFromToken(cookie.getValue());
-                    } catch (Exception ignored) {}
+                    String token = cookie.getValue();
+                    email = jwtUtils.getEmailFromToken(token);
+                    
+                    userId = jwtUtils.getUserIdFromToken(token);
                     break;
                 }
             }
         }
 
         // 2 Log di logout
-        auditService.log(email, null, "AUTH_LOGOUT", "Logout effettuato dall'utente", request, null);
+        auditService.log(email, userId, "AUTH_LOGOUT", "Logout effettuato dall'utente", request, null);
 
         // 3 Cancellazione cookie
         ResponseCookie deleteCookie = ResponseCookie.from("shulehub_token", "")

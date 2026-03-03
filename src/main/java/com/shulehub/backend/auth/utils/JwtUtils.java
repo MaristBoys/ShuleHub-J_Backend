@@ -7,9 +7,12 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.shulehub.backend.auth.model.entity.User;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class JwtUtils {
@@ -47,10 +50,13 @@ public class JwtUtils {
     // GENERAZIONE TOKEN
     // =========================
 
+    Date now = new Date();
+    Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
+/*
     public String generateToken(String email) {
         return generateToken(email, Map.of());
     }
-
+ 
     public String generateToken(String email, Map<String, Object> claims) {
 
         Date now = new Date();
@@ -64,6 +70,31 @@ public class JwtUtils {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
+
+
+    public String generateToken(User user) { // Passa l'oggetto User, non solo l'email
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("userId", user.getId()) // <--- Aggiungi l'ID qui
+                .setIssuedAt(new Date())
+                .setExpiration(expiry)
+                .signWith(this.key)
+                .compact();
+    }
+*/
+    public String generateToken(String email, UUID userId) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("userId", userId.toString()) // Inserisci l'ID ricevuto // come stringa nei claim perché JWT lavora con stringhe
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(this.key)
+                .compact();
+    }
+
 
     // =========================
     // VALIDAZIONE TOKEN
@@ -107,5 +138,21 @@ public class JwtUtils {
 
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    public UUID getUserIdFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(this.key) // Usa la key inizializzata nel tuo @PostConstruct
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            // Recuperiamo l'ID dai claims
+            String userIdString = claims.get("userId", String.class);
+            return userIdString != null ? UUID.fromString(userIdString) : null;
+        } catch (Exception e) {
+            return null; // Token invalido o claim assente
+        }
     }
 }
