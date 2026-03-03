@@ -12,6 +12,10 @@ public interface YearRepository extends JpaRepository<Year, Short> {
     // utilizzato al login per caricare il contesto docente
     // utilizzato per inserire l'anno corrente nella dashboard
     Optional<Year> findByYearIsActiveTrue(); 
+    
     // Aggiunta per ordinare gli anni in modo decrescente (utile per la UI)
     List<Year> findAllByOrderByYearDesc();
+
+    // Trova l'anno con il valore numerico più alto
+    Optional<Year> findFirstByOrderByYearDesc();
 }

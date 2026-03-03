@@ -83,9 +83,23 @@ public class SchoolConfigService {
         // non rimaniamo con due anni attivi o nessuno.
     }
 
+    @Transactional
+    public Year createNextYear() {
+        // 1. Recupera l'ultimo anno presente
+        int lastYearValue = yearRepository.findFirstByOrderByYearDesc()
+                .map(Year::getYear)
+                .orElse((short)2026); // Default se il DB è vuoto
 
+        int nextYearValue = lastYearValue + 1;
 
+        // 2. Crea il nuovo record (non attivo di default)
+        Year nextYear = new Year();
+        nextYear.setYear((short) nextYearValue);
+        nextYear.setYearDescription("Academic Session " + nextYearValue);
+        nextYear.setYearIsActive(false);
 
+        return yearRepository.save(nextYear);
+    }
 
 
 }
