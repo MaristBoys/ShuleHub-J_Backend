@@ -6,6 +6,9 @@ import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.school_config.repository.YearRoomRepository;
 import com.shulehub.backend.subject.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,4 +45,47 @@ public class SchoolConfigService {
                 subjectsCount
         );
     }
+
+    // Aggiunte a SchoolConfigService.java
+
+    /**
+     * Recupera tutti gli anni registrati nel sistema
+     */
+    @Transactional(readOnly = true)
+    public List<Year> getAllYears() {
+        return yearRepository.findAllByOrderByYearDesc(); 
+    }
+
+    /**
+     * Cambia l'anno attivo del sistema.
+     * @param yearId ID dell'anno da attivare
+     */
+    @Transactional
+    public void updateActiveYear(Short yearId) {
+        // 1. Troviamo l'anno che deve diventare attivo
+        Year newActiveYear = yearRepository.findById(yearId)
+                .orElseThrow(() -> new RuntimeException("Year not found"));
+
+        // 2. Se è già attivo, non facciamo nulla
+        if (newActiveYear.isYearIsActive()) return;
+
+        // 3. Troviamo l'anno attualmente attivo e lo disattiviamo
+        yearRepository.findByYearIsActiveTrue().ifPresent(oldActive -> {
+            oldActive.setYearIsActive(false);
+            yearRepository.save(oldActive);
+        });
+
+        // 4. Attiviamo il nuovo anno
+        newActiveYear.setYearIsActive(true);
+        yearRepository.save(newActiveYear);
+        
+        // Nota: @Transactional assicura che se qualcosa fallisce, 
+        // non rimaniamo con due anni attivi o nessuno.
+    }
+
+
+
+
+
+
 }

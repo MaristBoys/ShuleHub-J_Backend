@@ -3,6 +3,8 @@ package com.shulehub.backend.school_config.repository; // <--- Pacchetto corrett
 import com.shulehub.backend.school_config.model.entity.Year;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -10,4 +12,6 @@ public interface YearRepository extends JpaRepository<Year, Short> {
     // utilizzato al login per caricare il contesto docente
     // utilizzato per inserire l'anno corrente nella dashboard
     Optional<Year> findByYearIsActiveTrue(); 
+    // Aggiunta per ordinare gli anni in modo decrescente (utile per la UI)
+    List<Year> findAllByOrderByYearDesc();
 }
