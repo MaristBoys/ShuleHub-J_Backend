@@ -14,6 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,6 +28,62 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtils = jwtUtils;
     }
 
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        
+        String token = null;
+
+        // 1. Estrazione token dal cookie
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("shulehub_token".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // 2. Validazione SILENZIOSA
+        // Se il token non c'è o non è valido, non facciamo nulla e proseguiamo.
+        // Sarà poi Spring Security (tramite SecurityConfig) a decidere 
+        // se quella specifica rotta richiedeva autenticazione o meno.
+        try {
+            if (token != null && jwtUtils.validateToken(token)) {
+                String email = jwtUtils.getEmailFromToken(token);
+                String role = jwtUtils.getRoleFromToken(token);
+                List<String> permissions = jwtUtils.getPermissionsFromToken(token);
+
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority(role));
+                if (permissions != null) {
+                    permissions.forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
+                }
+
+                UsernamePasswordAuthenticationToken auth = 
+                    new UsernamePasswordAuthenticationToken(email, null, authorities);
+                
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+        } catch (Exception e) {
+            // Se il token è corrotto o scaduto, puliamo il contesto
+            SecurityContextHolder.clearContext();
+            // Opzionale: log.debug("Token non valido: " + e.getMessage());
+        }
+
+        // 3. PASSA SEMPRE AL PROSSIMO FILTRO
+        filterChain.doFilter(request, response);
+    }
+
+
+
+
+
+
+
+
+
+/*
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -64,4 +122,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+*/
 }
