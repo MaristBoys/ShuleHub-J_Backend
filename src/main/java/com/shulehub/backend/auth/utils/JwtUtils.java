@@ -7,12 +7,13 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.shulehub.backend.auth.model.entity.User;
-
 import javax.crypto.SecretKey;
+import java.util.Collections; 
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
 
 @Component
 public class JwtUtils {
@@ -52,43 +53,16 @@ public class JwtUtils {
 
     Date now = new Date();
     Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
-/*
-    public String generateToken(String email) {
-        return generateToken(email, Map.of());
-    }
- 
-    public String generateToken(String email, Map<String, Object> claims) {
 
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-
-    public String generateToken(User user) { // Passa l'oggetto User, non solo l'email
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("userId", user.getId()) // <--- Aggiungi l'ID qui
-                .setIssuedAt(new Date())
-                .setExpiration(expiry)
-                .signWith(this.key)
-                .compact();
-    }
-*/
-    public String generateToken(String email, UUID userId) {
+    public String generateToken(String email, UUID userId, String profileName,Set<String> permissions) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + JWT_EXPIRATION_MS);
 
         return Jwts.builder()
                 .setSubject(email)
                 .claim("userId", userId.toString()) // Inserisci l'ID ricevuto // come stringa nei claim perché JWT lavora con stringhe
+                .claim("role", "ROLE_" + profileName.toUpperCase()) // Aggiungi il ruolo come claim
+                .claim("permissions", permissions) // Inseriamo la lista dei codici permesso (es. ["EDIT_GRADES", "VIEW_CONFIG"])   
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(this.key)
@@ -119,10 +93,6 @@ public class JwtUtils {
     // METODI COMPATIBILI COL TUO FILTER
     // =========================
 
-    public String getEmailFromToken(String token) {
-        return extractAllClaims(token).getSubject();
-    }
-
     public Claims extractAllClaims(String token) {
 
         return Jwts.parserBuilder()
@@ -130,6 +100,10 @@ public class JwtUtils {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public String getEmailFromToken(String token) {
+        return extractAllClaims(token).getSubject();
     }
 
     public Date extractExpiration(String token) {
@@ -140,19 +114,34 @@ public class JwtUtils {
         return extractExpiration(token).before(new Date());
     }
 
+
     public UUID getUserIdFromToken(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(this.key) // Usa la key inizializzata nel tuo @PostConstruct
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            // Recuperiamo l'ID dai claims
+            Claims claims = extractAllClaims(token);
             String userIdString = claims.get("userId", String.class);
             return userIdString != null ? UUID.fromString(userIdString) : null;
         } catch (Exception e) {
+            // Logga l'errore se necessario per il debug
             return null; // Token invalido o claim assente
         }
     }
+
+    public String getRoleFromToken(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("role", String.class);
+    }
+
+    // Aggiungi il metodo per estrarre i permessi
+    public List<String> getPermissionsFromToken(String token) {
+        Claims claims = extractAllClaims(token);
+        Object permissions = claims.get("permissions");
+        
+        if (permissions instanceof List<?>) {
+            return ((List<?>) permissions).stream()
+                    .map(Object::toString)
+                    .toList();
+        }
+        return Collections.emptyList();
+    }
+
 }

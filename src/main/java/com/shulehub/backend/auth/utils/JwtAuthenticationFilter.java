@@ -12,7 +12,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
-import java.util.ArrayList;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collections;
+import java.util.List;
 
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -43,10 +46,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtUtils.validateToken(token)) {
             String email = jwtUtils.getEmailFromToken(token);
             
+            // Recuperiamo il ruolo dal JWT (es. "ROLE_ADMIN")
+            String role = jwtUtils.getRoleFromToken(token);
+
+            // Creiamo una lista di autorità (ruoli) per Spring Security
+            // Convertiamo la stringa del ruolo in una GrantedAuthority di Spring
+            // Collections.singletonList crea una lista con un solo elemento (ottimo per performance)
+            List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority(role)
+            );
+
             // Creiamo l'oggetto di autenticazione per Spring
             UsernamePasswordAuthenticationToken auth = 
-                new UsernamePasswordAuthenticationToken(email, null, new ArrayList<>());
-            
+                new UsernamePasswordAuthenticationToken(email, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 

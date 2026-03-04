@@ -45,10 +45,23 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/wakeup").permitAll() 
                 .requestMatchers("/api/auth/google-login").permitAll()
-                .requestMatchers("/api/auth/logout").permitAll() //
+                .requestMatchers("/api/auth/logout").permitAll()
+                .requestMatchers("/api/v1/school-config/**").hasAnyRole("ADMIN", "SECRETARY") // Solo admin e segreteria possono accedere alla configurazione della scuola
                 .anyRequest().authenticated()
             );
+        
+        /* Dato che il tuo sistema prevede dei Permissions (come hai mostrato nel file RefPermission.java), 
+        in futuro potresti voler spostare il controllo dal "Nome del Profilo" al "Codice del Permesso".
+         Ad esempio, se hai un permesso chiamato "MANAGE_CONFIG" che permette di gestire la configurazione della scuola, potresti scrivere:
+         .requestMatchers("/api/v1/school-config/**").hasAuthority("MANAGE_CONFIG")
+         
+         In questo modo, invece di controllare se l'utente ha un ruolo specifico, controlleresti 
+         se ha un permesso specifico. Per fare questo, dovresti assicurarti che il tuo JWT 
+         includa i permessi dell'utente e che il tuo filtro JWT li carichi correttamente
+         nelle authorities di Spring Security.
+         */
 
+        
         http.addFilterBefore(
             new JwtAuthenticationFilter(jwtUtils),
             UsernamePasswordAuthenticationFilter.class

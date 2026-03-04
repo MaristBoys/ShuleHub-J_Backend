@@ -55,7 +55,7 @@ public class AuthController {
         String email="unknown";
         String googlePicture = null;
         String googleName = null;
-
+ 
         try {
             var node = new com.fasterxml.jackson.databind.ObjectMapper()
                     .readTree(Base64.getUrlDecoder().decode(idTokenString.split("\\.")[1]));
@@ -83,7 +83,7 @@ public class AuthController {
 
         // 6 Generazione JWT e cookie
         // generazione del token JWT con email e userId presi da authData, che è un DTO che contiene le informazioni dell'utente recuperate o create durante il login
-        String jwt = jwtUtils.generateToken(authData.getEmail(), authData.getUserId());
+        String jwt = jwtUtils.generateToken(authData.getEmail(), authData.getUserId(),authData.getProfileName(),authData.getPermissions());
         // generazione del cookie HTTP-only con il token JWT, che sarà inviato al client e usato per autenticare le richieste future
         ResponseCookie cookie = ResponseCookie.from("shulehub_token", jwt)
                 .httpOnly(true)
