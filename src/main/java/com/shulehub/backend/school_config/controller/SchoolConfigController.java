@@ -4,6 +4,8 @@ import com.shulehub.backend.common.response.ApiResponse;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.school_config.service.SchoolConfigService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +26,18 @@ public class SchoolConfigController {
         List<Year> years = schoolConfigService.getAllYears();
         return ResponseEntity.ok(new ApiResponse<>(true, "Years retrieved", years));
     }
+
+    /**
+     * NUOVO: Crea il prossimo anno accademico (POST)
+     * Questo risponde alla chiamata del tuo service JS
+     */
+    @PostMapping("/years")
+    public ResponseEntity<ApiResponse<Year>> createNextYear() {
+        Year newYear = schoolConfigService.createNextYear();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Year created: " + newYear.getYear(), newYear));
+    }
+
 
     /**
      * Endpoint per attivare un anno specifico

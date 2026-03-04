@@ -95,7 +95,7 @@ public class SchoolConfigService {
         // 2. Crea il nuovo record (non attivo di default)
         Year nextYear = new Year();
         nextYear.setYear((short) nextYearValue);
-        nextYear.setYearDescription("Academic Session " + nextYearValue);
+        nextYear.setYearDescription(Integer.toString(nextYearValue)); //String.valueOf(nextYearValue)
         nextYear.setYearIsActive(false);
 
         return yearRepository.save(nextYear);
