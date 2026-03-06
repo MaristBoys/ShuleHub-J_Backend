@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/wakeup").permitAll() 
                 .requestMatchers("/api/auth/google-login").permitAll()
                 .requestMatchers("/api/auth/logout").permitAll()
-                .requestMatchers("/api/v1/school-config/**").hasAnyRole("ADMIN", "SECRETARY") // Solo admin e segreteria possono accedere alla configurazione della scuola
+                .requestMatchers("/api/v1/school-config/**").hasAnyRole("ADMIN", "DEPUTY", "HEADMASTER") // Solo admin e segreteria possono accedere alla configurazione della scuola
                 .anyRequest().authenticated()
             );
         

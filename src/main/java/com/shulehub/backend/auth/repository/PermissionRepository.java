@@ -10,18 +10,13 @@ import org.springframework.stereotype.Repository;
 import java.util.Set;
 
 
+
 @Repository
 public interface PermissionRepository extends JpaRepository<RefPermission, Short> {
 
-    
-    @Query("SELECT rel.permission.permissionCode FROM RelProfilePermission rel " +
-           "WHERE rel.idProfile = :profileId")
+    @Query("SELECT DISTINCT rel.permission.permissionCode FROM RelProfilePermission rel " +
+           "WHERE rel.idProfile = :profileId " +
+           "AND rel.permission.permissionIsActive = true " + 
+           "AND rel.profilePermissionIsActive = true")
     Set<String> findCodesByProfileId(@Param("profileId") Short profileId);
-    
-    
-    /* 
-    @Query("SELECT p.permissionCode FROM RefPermission p " +
-           "JOIN RelProfilePermission rel ON p.id = rel.idPermission " +
-           "WHERE rel.idProfile = :profileId")
-    Set<String> findCodesByProfileId(@Param("profileId") Short profileId);*/
 }

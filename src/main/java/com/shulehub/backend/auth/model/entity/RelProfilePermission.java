@@ -4,22 +4,35 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "rel_profile_permission")
-@Data // Genera Getter, Setter, toString, equals e hashCode
-@NoArgsConstructor  // Genera il costruttore vuoto richiesto da JPA (risolve l'import alert)
-@AllArgsConstructor // Genera il costruttore con tutti i campi (risolve l'import alert)
+@Table(name = "rel_profile_permission", schema = "public")
+@Data 
+@NoArgsConstructor  
+@AllArgsConstructor 
 public class RelProfilePermission {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    // Nel DB hai usato BIGINT, quindi in Java è corretto usare Long (non Integer)
+    private Long id;
 
-    @Column(name = "id_profile")
+    @Column(name = "id_profile", nullable = false)
     private Short idProfile;
 
-    // Invece di un semplice Short idPermission, usiamo l'oggetto!
-    @ManyToOne
-    @JoinColumn(name = "id_permission", referencedColumnName = "id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_permission", referencedColumnName = "id", nullable = false)
     private RefPermission permission;
+
+    // Campo booleano per l'attivazione specifica del profilo
+    @Column(name = "profile_permission_is_active", nullable = false)
+    private boolean profilePermissionIsActive = true;
+
+    // Campi di Audit (gestiti dal trigger lato DB, ma mappati qui per lettura)
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 }
