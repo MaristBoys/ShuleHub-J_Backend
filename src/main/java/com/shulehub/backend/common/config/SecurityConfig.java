@@ -41,17 +41,24 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // 1. IMPORTANTE: Permetti tutte le richieste OPTIONS (Pre-flight)
+                // 1. Permetti tutte le richieste OPTIONS (Pre-flight)
+                // Questo è importante per il CORS: le richieste pre-flight (OPTIONS) devono essere permesse senza autenticazione
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/wakeup").permitAll() 
                 .requestMatchers("/api/auth/google-login").permitAll()
                 .requestMatchers("/api/auth/logout").permitAll()
-                .requestMatchers("/api/v1/school-config/**").hasAnyRole("ADMIN", "DEPUTY", "HEADMASTER") // Solo admin e segreteria possono accedere alla configurazione della scuola
+                
+                // 2. non utilizziamo i ruoli .hasAnyRole(...) 
+                // Permettiamo l'accesso a tutti i loggati (.authenticated())
+                // Sarà il Controller con @PreAuthorize a decidere chi può fare cosa.
+                .requestMatchers("/api/v1/school-config/**").authenticated()
+                
+                // 3. Per tutte le altre rotte non specificate, richiediamo autenticazione
                 .anyRequest().authenticated()
             );
         
         /* Dato che il tuo sistema prevede dei Permissions (come hai mostrato nel file RefPermission.java), 
-        in futuro potresti voler spostare il controllo dal "Nome del Profilo" al "Codice del Permesso".
+        spostiamo il controllo dal "Nome del Profilo" al "Codice del Permesso".
          Ad esempio, se hai un permesso chiamato "MANAGE_CONFIG" che permette di gestire la configurazione della scuola, potresti scrivere:
          .requestMatchers("/api/v1/school-config/**").hasAuthority("MANAGE_CONFIG")
          
