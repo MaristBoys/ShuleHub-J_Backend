@@ -4,6 +4,7 @@ import com.shulehub.backend.school_config.model.dto.SchoolConfigSummaryDTO;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.school_config.repository.YearRoomRepository;
+import com.shulehub.backend.subject.model.entity.Subject;
 import com.shulehub.backend.subject.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -46,7 +47,9 @@ public class SchoolConfigService {
         );
     }
 
-    // Aggiunte a SchoolConfigService.java
+    /*************************************************************************************************** 
+    YEARS
+    ****************************************************************************************************/
 
     /**
      * Recupera tutti gli anni registrati nel sistema
@@ -100,6 +103,59 @@ public class SchoolConfigService {
 
         return yearRepository.save(nextYear);
     }
+
+    /*************************************************************************************************** 
+    SUBJECTS
+    ****************************************************************************************************/
+
+    /**
+     * Recupera tutte le materie per la gestione amministrativa
+     */
+    @Transactional(readOnly = true)
+    public List<Subject> getAllSubjects() {
+        return subjectRepository.findAllByOrderBySubjectNameEngAsc();
+    }
+
+    /**
+     * Crea una nuova materia
+     */
+    @Transactional
+    public Subject createSubject(Subject subject) {
+        // Possiamo aggiungere logiche di validazione qui (es. check se esiste già l'abbreviazione)
+        subject.setSubjectIsActive(true); // Default attiva per le nuove
+        return subjectRepository.save(subject);
+    }
+
+    /**
+     * Aggiorna una materia esistente (inclusa l'attivazione/disattivazione)
+     */
+    @Transactional
+    public Subject updateSubject(Short id, Subject subjectDetails) {
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Subject not found with id: " + id));
+
+        // Aggiornamento campi
+        subject.setSubjectNameEng(subjectDetails.getSubjectNameEng());
+        subject.setSubjectNameKsw(subjectDetails.getSubjectNameKsw());
+        subject.setSubjectAbbr(subjectDetails.getSubjectAbbr());
+        subject.setSubjectDescription(subjectDetails.getSubjectDescription());
+        subject.setSubjectIsActive(subjectDetails.isSubjectIsActive());
+
+        return subjectRepository.save(subject);
+    }
+
+    /**
+     * Toggle rapido dello stato attivo (utile per il primo click nel modale)
+     */
+    @Transactional
+    public void toggleSubjectStatus(Short id) {
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+        subject.setSubjectIsActive(!subject.isSubjectIsActive());
+        subjectRepository.save(subject);
+    }
+
+
 
 
 }

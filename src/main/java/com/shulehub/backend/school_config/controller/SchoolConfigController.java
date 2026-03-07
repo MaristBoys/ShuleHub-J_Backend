@@ -3,6 +3,8 @@ package com.shulehub.backend.school_config.controller;
 import com.shulehub.backend.common.response.ApiResponse;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.school_config.service.SchoolConfigService;
+import com.shulehub.backend.subject.model.entity.Subject;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,9 @@ import java.util.List;
 public class SchoolConfigController {
 
     private final SchoolConfigService schoolConfigService;
+
+
+    // --- GESTIONE CURRENT YEAR ---
 
     /**
      * Endpoint per la lista completa degli anni
@@ -55,4 +60,53 @@ public class SchoolConfigController {
         schoolConfigService.updateActiveYear(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Active year updated successfully", null));
     }
+
+    // --- GESTIONE SUBJECTS ---
+
+    /**
+     * Recupera la lista completa di tutte le materie (Sola Lettura)
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'DASHBOARD_VIEW_CONFIG')")
+    @GetMapping("/subjects")
+    public ResponseEntity<ApiResponse<List<Subject>>> getAllSubjects() {
+        List<Subject> subjects = schoolConfigService.getAllSubjects();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Subjects list retrieved", subjects));
+    }
+
+    /**
+     * Crea una nuova materia
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_SUBJECTS')")
+    @PostMapping("/subjects")
+    public ResponseEntity<ApiResponse<Subject>> createSubject(@RequestBody Subject subject) {
+        Subject newSubject = schoolConfigService.createSubject(subject);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Subject created successfully", newSubject));
+    }
+
+    /**
+     * Aggiorna una materia esistente (Dettagli completi)
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_SUBJECTS')")
+    @PutMapping("/subjects/{id}")
+    public ResponseEntity<ApiResponse<Subject>> updateSubject(@PathVariable Short id, @RequestBody Subject subject) {
+        Subject updated = schoolConfigService.updateSubject(id, subject);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Subject updated successfully", updated));
+    }
+
+    /**
+     * Toggle rapido dello stato attivo/disattivo
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_SUBJECTS')")
+    @PatchMapping("/subjects/{id}/toggle")
+    public ResponseEntity<ApiResponse<Void>> toggleSubject(@PathVariable Short id) {
+        schoolConfigService.toggleSubjectStatus(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Subject status toggled", null));
+    }
+
+
+
+
+
+
 }
