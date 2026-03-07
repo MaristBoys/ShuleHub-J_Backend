@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SchoolConfigSummaryDTO {
+    private Short yearId;
     private Short currentYear;
     private long activeRoomsCount;
     private long totalSubjectsCount;

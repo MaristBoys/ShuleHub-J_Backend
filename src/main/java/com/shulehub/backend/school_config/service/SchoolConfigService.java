@@ -54,6 +54,7 @@ public class SchoolConfigService {
 
         // 4. Restituiamo il sotto-DTO
         return new SchoolConfigSummaryDTO(
+                activeYear.getId(),
                 activeYear.getYear(),
                 roomsCount,
                 subjectsCount
