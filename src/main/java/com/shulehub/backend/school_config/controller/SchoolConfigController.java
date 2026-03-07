@@ -1,6 +1,7 @@
 package com.shulehub.backend.school_config.controller;
 
 import com.shulehub.backend.common.response.ApiResponse;
+import com.shulehub.backend.school_config.model.dto.RoomMatrixDTO;
 import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.school_config.service.SchoolConfigService;
 import com.shulehub.backend.subject.model.entity.Subject;
@@ -21,8 +22,9 @@ public class SchoolConfigController {
 
     private final SchoolConfigService schoolConfigService;
 
-
-    // --- GESTIONE CURRENT YEAR ---
+    /*************************************************************************************************** 
+    CURRENT YEAR
+    ****************************************************************************************************/
 
     /**
      * Endpoint per la lista completa degli anni
@@ -61,8 +63,28 @@ public class SchoolConfigController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Active year updated successfully", null));
     }
 
-    // --- GESTIONE SUBJECTS ---
 
+
+    
+    /*************************************************************************************************** 
+    ROOMS
+    ****************************************************************************************************/
+
+    /**
+     * Recupera la matrice delle stanze per l'anno attivo.
+     * Usato per visualizzare la griglia Form/Stream.
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOMS')")
+    @GetMapping("/rooms/matrix/{yearId}")
+    public ResponseEntity<ApiResponse<RoomMatrixDTO>> getRoomMatrix(@PathVariable Short yearId) {
+        RoomMatrixDTO matrix = schoolConfigService.getRoomMatrix(yearId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Room matrix retrieved", matrix));
+    }
+
+
+    /*************************************************************************************************** 
+    SUBJECTS
+    ****************************************************************************************************/
     /**
      * Recupera la lista completa di tutte le materie (Sola Lettura)
      */

@@ -57,16 +57,14 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
         
-        /* Dato che il tuo sistema prevede dei Permissions (come hai mostrato nel file RefPermission.java), 
+        /* Dato che il tuo sistema prevede dei Permissions (file RefPermission.java), 
         spostiamo il controllo dal "Nome del Profilo" al "Codice del Permesso".
-         Ad esempio, se hai un permesso chiamato "MANAGE_CONFIG" che permette di gestire la configurazione della scuola, potresti scrivere:
-         .requestMatchers("/api/v1/school-config/**").hasAuthority("MANAGE_CONFIG")
-         
-         In questo modo, invece di controllare se l'utente ha un ruolo specifico, controlleresti 
-         se ha un permesso specifico. Per fare questo, dovresti assicurarti che il tuo JWT 
-         includa i permessi dell'utente e che il tuo filtro JWT li carichi correttamente
-         nelle authorities di Spring Security.
-         */
+        La gestione dei permessi specifici (come CONFIG_EDIT_YEAR) avviene a livello di Controller,
+        usando @PreAuthorize sui singoli endpoint. 
+        In questo modo, invece di controllare se l'utente ha un ruolo specifico, controlliamo 
+        se ha un permesso specifico. Per fare questo il JWT include i permessi dell'utente
+        e il filtro JWT li carica nelle authorities di Spring Security.
+        */
 
         
         http.addFilterBefore(

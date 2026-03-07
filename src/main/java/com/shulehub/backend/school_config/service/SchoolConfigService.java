@@ -1,14 +1,26 @@
 package com.shulehub.backend.school_config.service;
 
+import com.shulehub.backend.school_config.model.dto.FormRowDTO;
+import com.shulehub.backend.school_config.model.dto.RoomMatrixDTO;
 import com.shulehub.backend.school_config.model.dto.SchoolConfigSummaryDTO;
+import com.shulehub.backend.school_config.model.dto.YearRoomSummaryDTO;
+import com.shulehub.backend.school_config.model.entity.Form;
 import com.shulehub.backend.school_config.model.entity.Year;
+import com.shulehub.backend.school_config.model.entity.YearRoom;
+import com.shulehub.backend.school_config.repository.FormRepository;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.school_config.repository.YearRoomRepository;
 import com.shulehub.backend.subject.model.entity.Subject;
 import com.shulehub.backend.subject.repository.SubjectRepository;
+
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +32,7 @@ public class SchoolConfigService {
     private final YearRepository yearRepository;
     private final YearRoomRepository yearRoomRepository;
     private final SubjectRepository subjectRepository;
+    private final FormRepository formRepository;
 
     /**
      * Recupera il riepilogo per la card School Config.
@@ -103,6 +116,65 @@ public class SchoolConfigService {
 
         return yearRepository.save(nextYear);
     }
+
+    /*************************************************************************************************** 
+    ROOMS
+    ****************************************************************************************************/
+
+    public RoomMatrixDTO getRoomMatrix(Short yearId) {
+        // 1. Recuperiamo tutte le YearRoom dell'anno
+        List<YearRoom> yearRooms = yearRoomRepository.findByYearId(yearId);
+        
+        // [OTTIMIZZAZIONE] Creiamo una mappa composta da "formId-streamNum" -> YearRoom
+        // Questo rende il recupero della cella istantaneo (O(1)) invece di scansionare ogni volta la lista
+        Map<String, YearRoom> roomMap = yearRooms.stream()
+                .collect(Collectors.toMap(
+                    yr -> yr.getRoom().getForm().getId() + "-" + yr.getRoom().getRoomNum(),
+                    yr -> yr
+                ));
+
+
+        // 2. Identifichiamo tutti i possibili Stream esistenti per creare le colonne
+        List<Short> streamsList = yearRooms.stream()
+                .map(yr -> yr.getRoom().getRoomNum()) // roomNum è 1, 2, 3...
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        
+        // [FIX] Usiamo una lista mutabile per evitare problemi con List.of
+        // Se non ci sono stanze, definiamo almeno uno stream di default per la UI
+        final List<Short> streams = streamsList.isEmpty() 
+                ? new ArrayList<>(List.of((short)1, (short)2, (short)3)) 
+                : streamsList;        
+        
+        // 3. Recuperiamo tutti i Form (1-6)
+        List<Form> allForms = formRepository.findByFormIsActiveTrueOrderByFormNumAsc();
+
+        // 4. Costruiamo le righe
+        List<FormRowDTO> rows = allForms.stream().map(form -> {
+            Map<Short, YearRoomSummaryDTO> cells = new HashMap<>();
+            
+            streams.forEach(streamNum -> {
+                // [OTTIMIZZAZIONE] Cerchiamo nella mappa invece di filtrare la lista
+                YearRoom match = roomMap.get(form.getId() + "-" + streamNum);
+
+                if (match != null) {
+                    cells.put(streamNum, new YearRoomSummaryDTO(
+                        match.getId(), 
+                        match.getRoom().getRoomName(), 
+                        true
+                    ));
+                } else {
+                    cells.put(streamNum, new YearRoomSummaryDTO(null, null, false));
+                }
+            });
+
+            return new FormRowDTO(form.getFormNum(), form.getFormName(), cells);
+        }).collect(Collectors.toList());
+
+        return new RoomMatrixDTO(streams, rows);
+    }
+
 
     /*************************************************************************************************** 
     SUBJECTS
