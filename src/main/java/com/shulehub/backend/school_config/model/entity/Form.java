@@ -25,6 +25,6 @@ public class Form {
     @Column(name = "form_is_active", nullable = false)
     private boolean formIsActive = true;
 
-    @Column(name = "\"Level\"") // Usiamo le virgolette perché Level è parola riservata in SQL
-    private String level;
+    @Column(name = "form_level") // Niente più virgolette scappate o maiuscole
+    private String formLevel;
 }
