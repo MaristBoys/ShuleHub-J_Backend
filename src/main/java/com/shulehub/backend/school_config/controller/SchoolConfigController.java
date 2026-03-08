@@ -75,10 +75,21 @@ public class SchoolConfigController {
      * Usato per visualizzare la griglia Form/Stream.
      */
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOMS')")
-    @GetMapping("/rooms/matrix/{yearId}")
+   /*  @GetMapping("/rooms/matrix/{yearId}")
     public ResponseEntity<ApiResponse<RoomMatrixDTO>> getRoomMatrix(@PathVariable Short yearId) {
         RoomMatrixDTO matrix = schoolConfigService.getRoomMatrix(yearId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Room matrix retrieved", matrix));
+    }*/
+
+
+    @GetMapping("/rooms/matrix/{yearId}")
+    public ResponseEntity<?> getRoomMatrix(@PathVariable Short yearId) {
+        try {
+            return ResponseEntity.ok(new ApiResponse<>(true, "Success", schoolConfigService.getRoomMatrix(yearId)));
+        } catch (Exception e) {
+            e.printStackTrace(); // QUESTO APPARIRÀ NEI LOG DI RENDER
+            return ResponseEntity.status(500).body(new ApiResponse<>(false, e.getMessage(), null));
+        }
     }
 
 
