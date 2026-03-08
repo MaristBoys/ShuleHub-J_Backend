@@ -121,7 +121,7 @@ public class SchoolConfigService {
     /*************************************************************************************************** 
     ROOMS
     ****************************************************************************************************/
-
+    @Transactional(readOnly = true)
     public RoomMatrixDTO getRoomMatrix(Short yearId) {
         // 1. Recuperiamo tutte le YearRoom dell'anno
         List<YearRoom> yearRooms = yearRoomRepository.findByYearId(yearId);
