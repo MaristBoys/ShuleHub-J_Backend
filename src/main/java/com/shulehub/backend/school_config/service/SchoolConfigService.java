@@ -10,6 +10,8 @@ import com.shulehub.backend.school_config.model.entity.YearRoom;
 import com.shulehub.backend.school_config.repository.FormRepository;
 import com.shulehub.backend.school_config.repository.YearRepository;
 import com.shulehub.backend.school_config.repository.YearRoomRepository;
+import com.shulehub.backend.school_config.model.view.YearRoomStatsView;
+import com.shulehub.backend.school_config.repository.YearRoomStatsViewRepository;
 import com.shulehub.backend.subject.model.entity.Subject;
 import com.shulehub.backend.subject.repository.SubjectRepository;
 
@@ -19,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class SchoolConfigService {
 
     private final YearRepository yearRepository;
     private final YearRoomRepository yearRoomRepository;
+    private final YearRoomStatsViewRepository yearRoomStatsViewRepository;
     private final SubjectRepository subjectRepository;
     private final FormRepository formRepository;
 
@@ -123,58 +125,69 @@ public class SchoolConfigService {
     ****************************************************************************************************/
     @Transactional(readOnly = true)
     public RoomMatrixDTO getRoomMatrix(Short yearId) {
-        // 1. Recuperiamo tutte le YearRoom dell'anno
+        // 1. Carichiamo le stanze e le statistiche aggregate in "Bulk"
         List<YearRoom> yearRooms = yearRoomRepository.findByYearId(yearId);
-        
-        // [OTTIMIZZAZIONE] Creiamo una mappa composta da "formId-streamNum" -> YearRoom
-        // Questo rende il recupero della cella istantaneo (O(1)) invece di scansionare ogni volta la lista
-        Map<String, YearRoom> roomMap = yearRooms.stream()
-                .collect(Collectors.toMap(
-                    yr -> yr.getRoom().getForm().getId() + "-" + yr.getRoom().getRoomNum(),
-                    yr -> yr
-                ));
+        List<YearRoomStatsView> allStats = yearRoomStatsViewRepository.findByYearId(yearId);
 
+        // 2. Trasformiamo le statistiche in una mappa per accesso rapido via ID YearRoom
+        Map<Integer, YearRoomStatsView> statsMap = allStats.stream()
+            .collect(Collectors.toMap(YearRoomStatsView::getYearRoomId, s -> s));
 
-        // 2. Identifichiamo tutti i possibili Stream esistenti per creare le colonne
-        List<Short> streamsList = yearRooms.stream()
-                .map(yr -> yr.getRoom().getRoomNum()) // roomNum è 1, 2, 3...
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-        
-        // [FIX] Usiamo una lista mutabile per evitare problemi con List.of
-        // Se non ci sono stanze, definiamo almeno uno stream di default per la UI
-        final List<Short> streams = streamsList.isEmpty() 
-                ? new ArrayList<>(List.of((short)1, (short)2, (short)3)) 
-                : streamsList;        
-        
-        // 3. Recuperiamo tutti i Form (1-6)
+        // 3. Mappa per posizionare le stanze nella griglia (Key: formId-streamNum)
+        Map<String, YearRoom> roomMap = new HashMap<>();
+        for (YearRoom yr : yearRooms) {
+            if (yr.getRoom() != null && yr.getRoom().getForm() != null) {
+                // Estraiamo lo stream dall'ultima cifra del numero stanza (es. 21 -> 1)
+                int streamNum = yr.getRoom().getRoomNum() % 10; 
+                String key = yr.getRoom().getForm().getId() + "-" + streamNum;
+                roomMap.put(key, yr);
+            }
+        }
+
+        // 4. Definiamo le colonne (Stream 1, 2, 3) e le righe (Form attivi)
+        List<Short> streams = List.of((short)1, (short)2, (short)3);
         List<Form> allForms = formRepository.findByFormIsActiveTrueOrderByFormNumAsc();
 
-        // 4. Costruiamo le righe
-        List<FormRowDTO> rows = allForms.stream().map(form -> {
+        // 5. Costruzione dinamica delle righe della matrice
+        List<FormRowDTO> rows = new ArrayList<>();
+        for (Form form : allForms) {
             Map<Short, YearRoomSummaryDTO> cells = new HashMap<>();
             
-            streams.forEach(streamNum -> {
-                // [OTTIMIZZAZIONE] Cerchiamo nella mappa invece di filtrare la lista
-                YearRoom match = roomMap.get(form.getId() + "-" + streamNum);
-
+            for (Short sNum : streams) {
+                YearRoom match = roomMap.get(form.getId() + "-" + sNum);
+                
                 if (match != null) {
-                    cells.put(streamNum, new YearRoomSummaryDTO(
+                    YearRoomStatsView stats = statsMap.get(match.getId());
+                    
+                    // Prepariamo i dati calcolati per il frontend
+                    String ratio = "0/0";
+                    Double percentage = 0.0;
+                    if (stats != null && stats.getTotalSubjects() != null && stats.getTotalSubjects() > 0) {
+                        ratio = stats.getAssignedSubjects() + "/" + stats.getTotalSubjects();
+                        percentage = (double) stats.getAssignedSubjects() / stats.getTotalSubjects();
+                    }
+
+                    cells.put(sNum, new YearRoomSummaryDTO(
                         match.getId(), 
                         match.getRoom().getRoomName(), 
-                        true
+                        true, // isAssigned
+                        stats != null ? stats.getStudentCount() : 0,
+                        stats != null ? stats.getClassTeacherId() : null,
+                        stats != null ? stats.getClassTeacherName() : "No CT assigned",
+                        ratio,
+                        percentage
                     ));
                 } else {
-                    cells.put(streamNum, new YearRoomSummaryDTO(null, null, false));
+                    // Cella vuota: il frontend mostrerà il tasto "+"
+                    cells.put(sNum, new YearRoomSummaryDTO(null, null, false, 0, null, null, null, 0.0));
                 }
-            });
-
-            return new FormRowDTO(form.getFormNum(), form.getFormName(), cells);
-        }).collect(Collectors.toList());
+            }
+            rows.add(new FormRowDTO(form.getFormNum(), form.getFormName(), cells));
+        }
 
         return new RoomMatrixDTO(streams, rows);
     }
+
 
 
     /*************************************************************************************************** 
