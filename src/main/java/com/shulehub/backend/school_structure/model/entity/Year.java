@@ -1,4 +1,4 @@
-package com.shulehub.backend.school_config.model.entity; // <--- Pacchetto per la configurazione scolastica
+package com.shulehub.backend.school_structure.model.entity; // <--- Pacchetto per la configurazione scolastica
 
 import jakarta.persistence.*;
 import lombok.Data;

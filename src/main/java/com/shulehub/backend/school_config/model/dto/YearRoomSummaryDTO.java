@@ -1,6 +1,6 @@
 package com.shulehub.backend.school_config.model.dto;
 
-// è una visualizzazione semplificata della YearRoom,
+//contiene i dati che vengono inseriti nella singola card all'interno della matrice delle stanze (RoomMatrix)
 // contiene solo i dati essenziali per mostrare il riepilogo della stanza nella matrice (RoomMatrix)
 // e anche i campi aggiuntivi per la Dashboard (conteggio studenti, nome insegnante, rapporto di organico)
 

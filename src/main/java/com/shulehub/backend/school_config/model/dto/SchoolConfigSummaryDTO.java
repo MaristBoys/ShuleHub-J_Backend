@@ -1,4 +1,4 @@
-// è il DTO di primo livello della dashboard (i dati che si vedeno nella card), 
+// è il DTO di primo livello della dashboard (i dati che si vedeno nella card della dashboard principale), 
 // contiene solo i dati essenziali per mostrare il riepilogo della configurazione scolastica
 
 package com.shulehub.backend.school_config.model.dto;

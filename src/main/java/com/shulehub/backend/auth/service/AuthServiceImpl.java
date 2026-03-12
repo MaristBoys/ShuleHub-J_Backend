@@ -11,8 +11,6 @@ import com.google.api.client.json.gson.GsonFactory;
 
 // --- Model: Entities & DTOs ---
 import com.shulehub.backend.auth.model.entity.User;
-//import com.shulehub.backend.registry.model.entity.Employee;
-import com.shulehub.backend.school_config.model.entity.Year;
 import com.shulehub.backend.auth.model.dto.UserAuthDTO;
 import com.shulehub.backend.auth.model.dto.TeacherContextDTO;
 import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
@@ -22,7 +20,8 @@ import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
 import com.shulehub.backend.auth.repository.UserRepository;
 import com.shulehub.backend.registry.repository.EmployeeRepository;
 import com.shulehub.backend.auth.repository.PermissionRepository;
-import com.shulehub.backend.school_config.repository.YearRepository;
+import com.shulehub.backend.school_structure.model.entity.Year;
+import com.shulehub.backend.school_structure.repository.YearRepository;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
 import com.shulehub.backend.common.exception.auth.InvalidGoogleTokenException;
 import com.shulehub.backend.common.exception.auth.UserDisabledException;

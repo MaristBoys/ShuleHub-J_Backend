@@ -1,6 +1,8 @@
 package com.shulehub.backend.school_config.model.entity;
 
 import com.shulehub.backend.registry.model.entity.Student; // Assicurati che esista nel modulo registry
+import com.shulehub.backend.school_structure.model.entity.Year;
+import com.shulehub.backend.school_structure.model.entity.YearRoom;
 
 import jakarta.persistence.*;
 import lombok.Data;

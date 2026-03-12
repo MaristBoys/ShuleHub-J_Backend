@@ -1,7 +1,7 @@
 package com.shulehub.backend.teacher_assignment.model.entity;
 
 import com.shulehub.backend.registry.model.entity.Employee;
-import com.shulehub.backend.school_config.model.entity.YearRoom;
+import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.subject.model.entity.Subject;     
 
 import jakarta.persistence.*;

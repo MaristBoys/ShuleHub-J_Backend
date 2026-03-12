@@ -1,9 +1,13 @@
-package com.shulehub.backend.school_config.repository;
+package com.shulehub.backend.school_structure.repository;
 
-import com.shulehub.backend.school_config.model.entity.YearRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.shulehub.backend.school_structure.model.entity.YearRoom;
+
 import java.util.List;
+import java.util.Optional;
+
 
 @Repository
 public interface YearRoomRepository extends JpaRepository<YearRoom, Integer> {
@@ -20,4 +24,12 @@ public interface YearRoomRepository extends JpaRepository<YearRoom, Integer> {
      * a meno che non servano, ottimizzando la memoria.
      */
     List<YearRoom> findByYearId(Short yearId);
+
+    /**
+     * Recupera una stanza specifica per un determinato anno.
+     * Utilizzato per la logica di rollover (recupero scale anno precedente).
+     */
+    Optional<YearRoom> findByYearIdAndRoomId(Short yearId, Short roomId);
 }
+
+
