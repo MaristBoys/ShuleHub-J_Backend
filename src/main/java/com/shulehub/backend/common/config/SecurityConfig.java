@@ -44,10 +44,9 @@ public class SecurityConfig {
                 // 1. Permetti tutte le richieste OPTIONS (Pre-flight)
                 // Questo è importante per il CORS: le richieste pre-flight (OPTIONS) devono essere permesse senza autenticazione
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/wakeup").permitAll() 
-                .requestMatchers("/api/auth/google-login").permitAll()
-                .requestMatchers("/api/auth/logout").permitAll()
-                
+                // 2. Permetti tutte le richieste al modulo di autenticazione (Wakeup, Google, Logout)
+                .requestMatchers("/api/v1/auth/**").permitAll()
+    
                 // 2. non utilizziamo i ruoli .hasAnyRole(...) 
                 // Permettiamo l'accesso a tutti i loggati (.authenticated())
                 // Sarà il Controller con @PreAuthorize a decidere chi può fare cosa.
