@@ -51,12 +51,17 @@ public class SecurityConfig {
                 // 2. non utilizziamo i ruoli .hasAnyRole(...) 
                 // Permettiamo l'accesso a tutti i loggati (.authenticated())
                 // Sarà il Controller con @PreAuthorize a decidere chi può fare cosa.
+                .requestMatchers("/api/v1/dashboard/**").authenticated()
                 .requestMatchers("/api/v1/school-config/**").authenticated()
-                
+                .requestMatchers("/api/v1/subjects/**").authenticated()
+                .requestMatchers("/api/v1/school-structure/**").authenticated()
+                .requestMatchers("/api/v1/indicator-scales/**").authenticated()
+
                 // 3. Per tutte le altre rotte non specificate, richiediamo autenticazione
                 .anyRequest().authenticated()
             );
-        
+
+       
         /* Dato che il tuo sistema prevede dei Permissions (file RefPermission.java), 
         spostiamo il controllo dal "Nome del Profilo" al "Codice del Permesso".
         La gestione dei permessi specifici (come CONFIG_EDIT_YEAR) avviene a livello di Controller,
