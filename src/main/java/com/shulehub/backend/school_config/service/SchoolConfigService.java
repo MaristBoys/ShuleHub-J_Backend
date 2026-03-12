@@ -42,8 +42,6 @@ public class SchoolConfigService {
      */
     @Transactional(readOnly = true)
     public SchoolConfigSummaryDTO getSchoolConfigSummary() {
-        
-        // 1. Recuperiamo l'anno attivo (fondamentale per contestualizzare i conteggi)
         Year activeYear = yearRepository.findByYearIsActiveTrue()
                 .orElseThrow(() -> new RuntimeException("Configurazione Errata: Nessun anno scolastico attivo nel database."));
 
