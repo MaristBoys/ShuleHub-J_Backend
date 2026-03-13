@@ -6,6 +6,7 @@ import com.shulehub.backend.school_config.model.view.YearRoomDetailView;
 import com.shulehub.backend.school_config.model.view.YearRoomStatsView;
 import com.shulehub.backend.school_config.repository.YearRoomDetailViewRepository;
 import com.shulehub.backend.school_config.repository.YearRoomStatsViewRepository;
+import com.shulehub.backend.school_config.repository.YearRoomStudentRepository;
 import com.shulehub.backend.school_structure.model.entity.Form;
 import com.shulehub.backend.school_structure.model.entity.Year;
 import com.shulehub.backend.school_structure.model.entity.YearRoom;
@@ -14,6 +15,7 @@ import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.indicator_scale.service.IndicatorScaleService;
 import com.shulehub.backend.school_structure.service.SchoolStructureService;
 import com.shulehub.backend.subject.service.SubjectService;
+import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,10 +31,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SchoolConfigService {
 
-    // REPOSITORY LOCALI (Ok)
+    // REPOSITORY LOCALI
     //private final YearRoomRepository yearRoomRepository;
     private final YearRoomDetailViewRepository yearRoomDetailViewRepository;
     private final YearRoomStatsViewRepository yearRoomStatsViewRepository;
+    private final TeacherAssignmentRepository teacherAssignmentRepository; // Assicurati che esista
+    private final YearRoomStudentRepository yearRoomStudentRepository;     // Assicurati che esista
 
     // SERVICE ESTERNI (Orchestrazione)
     private final IndicatorScaleService indicatorScaleService;
@@ -155,32 +159,100 @@ public class SchoolConfigService {
     ****************************************************************************************************/
     /**
      * Recupera i dettagli completi per il modale di configurazione di una stanza.
-     * Delega a IndicatorScaleService il calcolo delle scale suggerite.
+     * non Delega a IndicatorScaleService il calcolo delle scale suggerite.
      */
     @Transactional(readOnly = true)
     public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId) {
-        // Recupero i dati aggregati dalla View di dettaglio
-        YearRoomDetailView view = yearRoomDetailViewRepository.findByYearRoomId(yearRoomId)
-                .orElseThrow(() -> new RuntimeException("Dettagli YearRoom non trovati"));
+        // 1. Recupero l'entità YearRoom per avere accesso a Year e Room direttamente
+        // Usiamo il service della struttura che hai già
+        YearRoom yrEntity = schoolStructureService.getYearRoomById(yearRoomId);
+        
+        
+        // 1. Recupero i dati base e le scale dalla View di dettaglio
+        YearRoomDetailView detailView = yearRoomDetailViewRepository.findById(yearRoomId)
+                .orElseThrow(() -> new RuntimeException("YearRoom details not found for ID: " + yearRoomId));
 
-        return YearRoomDetailDTO.builder()
-                .yearRoomId(view.getYearRoomId())
-                .roomName(view.getRoomName())
-                .formName(view.getFormName())
-                .currentScales(YearRoomDetailDTO.SelectedScales.builder()
-                        .gradeScaleId(view.getGradeScaleId())
-                        .gradeScaleName(view.getGradeScaleName())
-                        .divisionScaleId(view.getDivisionScaleId())
-                        .divisionScaleName(view.getDivisionScaleName())
-                        .conductAlphaScaleId(view.getConductAlphaScaleId())
-                        .conductAlphaScaleName(view.getConductAlphaScaleName())
-                        .conductTextScaleId(view.getConductTextScaleId())
-                        .conductTextScaleName(view.getConductTextScaleName())
+        // 2. Recupero i dati di sintesi (Header) dalla View Stats
+        YearRoomStatsView statsView = yearRoomStatsViewRepository.findById(yearRoomId)
+                .orElse(new YearRoomStatsView()); // Fallback se non ancora calcolate
+
+        // 3. Recupero la lista dei docenti assegnati (Staffing)
+        List<YearRoomDetailDTO.StaffAssignmentInfo> staff = teacherAssignmentRepository.findByYearRoomId(yearRoomId)
+                .stream()
+                .map(ta -> YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                        .subjectId(ta.getSubject().getId())
+                        .subjectName(ta.getSubject().getSubjectNameEng()) // o Ksw
+                        .teacherId(ta.getEmployee().getId())
+                        .fullName(ta.getEmployee().getPerson().getFullName())
+                        .isClassTeacher(ta.isClassTeacher())
+                        .isActive(ta.getEmployee().isEmployeeIsActive())
                         .build())
-                // DELEGA: Chiediamo al service delle scale di calcolare i suggerimenti basandosi sulla view corrente
-                .suggestedScaleIds(indicatorScaleService.calculateSuggestedScales(view))
+                .collect(Collectors.toList());
+
+        // 4. Recupero la lista degli studenti (Enrollment)
+        List<YearRoomDetailDTO.StudentListItemDTO> students = yearRoomStudentRepository.findByYearRoomId(yearRoomId)
+                .stream()
+                .map(yrs -> YearRoomDetailDTO.StudentListItemDTO.builder()
+                        .studentId(yrs.getStudent().getId())
+                        .fullName(yrs.getStudent().getPerson().getFullName())
+                        .isActive(yrs.getStudent().isStudentIsActive())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 5. Costruzione dei suggerimenti per le scale (logica che avevi già)
+        Map<String, Short> suggested = getSuggestedScalesForForm(detailView.getFormId());
+
+        // 6. Assemblaggio finale del DTO
+        return YearRoomDetailDTO.builder()
+                .yearRoomId(detailView.getYearRoomId())
+                .roomName(detailView.getRoomName())
+                .formName(detailView.getFormName())
+                .yearName(yrEntity.getYear().getYearDescription())
+                .studentCount(statsView.getStudentCount())
+                .classTeacherName(statsView.getClassTeacherName())
+                .staffingRatio(statsView.getAssignedSubjects() + "/" + statsView.getTotalSubjects())
+                .currentScales(YearRoomDetailDTO.SelectedScales.builder()
+                        .gradeScaleId(detailView.getGradeScaleId())
+                        .gradeScaleName(detailView.getGradeScaleName())
+                        .divisionScaleId(detailView.getDivisionScaleId())
+                        .divisionScaleName(detailView.getDivisionScaleName())
+                        .conductAlphaScaleId(detailView.getConductAlphaScaleId())
+                        .conductAlphaScaleName(detailView.getConductAlphaScaleName())
+                        .conductTextScaleId(detailView.getConductTextScaleId())
+                        .conductTextScaleName(detailView.getConductTextScaleName())
+                        .build())
+                .suggestedScaleIds(suggested)
+                .staffAssignments(staff)
+                .enrolledStudents(students)
                 .build();
     }
+
+
+    /**
+     * Logica di business per suggerire le scale in base al Form.
+     * Questa mappa viene usata dal frontend per pre-selezionare i valori nei dropdown.
+     */
+    private Map<String, Short> getSuggestedScalesForForm(Short formId) {
+        Map<String, Short> suggestions = new HashMap<>();
+        
+        // Esempio di logica: 
+        // Se Form < 5 (Primary), suggeriamo certi ID, altrimenti altri (Secondary)
+        if (formId != null && formId <= 4) {
+            suggestions.put("GRADE", (short) 1);         // ID della scala voti Primary
+            suggestions.put("DIVISION", (short) 3);      // ID della scala divisioni Primary
+            suggestions.put("CONDUCT_ALPHA", (short) 5); 
+            suggestions.put("CONDUCT_TEXT", (short) 6);
+        } else {
+            suggestions.put("GRADE", (short) 2);         // ID della scala voti Secondary
+            suggestions.put("DIVISION", (short) 4);
+            suggestions.put("CONDUCT_ALPHA", (short) 5);
+            suggestions.put("CONDUCT_TEXT", (short) 6);
+        }
+        
+        return suggestions;
+    }
+
+
 
     /**
      * Aggiorna le scale di valutazione per una stanza.

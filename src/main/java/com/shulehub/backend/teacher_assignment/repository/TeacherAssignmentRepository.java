@@ -41,6 +41,13 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
             @Param("employeeId") UUID employeeId, 
             @Param("activeYearId") Short activeYearId
     );
+
+
+    /**
+     * Recupera tutti i docenti e le materie assegnate a una specifica YearRoom.
+     * Spring JPA navigherà automaticamente la relazione 'yearRoom' e userà l'ID.
+     */
+    List<TeacherAssignment> findByYearRoomId(Integer yearRoomId);
 }
 
 
