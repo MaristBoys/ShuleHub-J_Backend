@@ -178,16 +178,29 @@ public class SchoolConfigService {
 
         // 3. Recupero la lista dei docenti assegnati (Staffing)
         List<YearRoomDetailDTO.StaffAssignmentInfo> staff = teacherAssignmentRepository.findByYearRoomId(yearRoomId)
-                .stream()
-                .map(ta -> YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                        .subjectId(ta.getSubject().getId())
-                        .subjectName(ta.getSubject().getSubjectNameEng()) // o Ksw
-                        .teacherId(ta.getEmployee().getId())
+            .stream()
+            .map(ta -> {
+                // Creiamo il builder per la materia (che c'è sempre)
+                var builder = YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                    .subjectId(ta.getSubject().getId())
+                    .subjectName(ta.getSubject().getSubjectNameEng())
+                    .isClassTeacher(ta.isClassTeacher());
+
+                // Se l'impiegato è assegnato, popoliamo i dati del docente
+                if (ta.getEmployee() != null) {
+                    builder.teacherId(ta.getEmployee().getId())
                         .fullName(ta.getEmployee().getPerson().getFullName())
-                        .isClassTeacher(ta.isClassTeacher())
-                        .isActive(ta.getEmployee().isEmployeeIsActive())
-                        .build())
-                .collect(Collectors.toList());
+                        .isActive(ta.getEmployee().isEmployeeIsActive());
+                } else {
+                    // Se l'impiegato è NULL, mettiamo valori di default
+                    builder.teacherId(null)
+                        .fullName("Vacant / Not Assigned")
+                        .isActive(false);
+                }
+
+                return builder.build();
+            })
+            .collect(Collectors.toList());
 
         // 4. Recupero la lista degli studenti (Enrollment)
         List<YearRoomDetailDTO.StudentListItemDTO> students = yearRoomStudentRepository.findByYearRoomId(yearRoomId)
