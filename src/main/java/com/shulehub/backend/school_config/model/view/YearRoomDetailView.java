@@ -29,6 +29,9 @@ public class YearRoomDetailView {
     @Column(name = "form_num")
     private Short formNum;
 
+    @Column(name = "form_name")
+    private String formName;
+
     // Mapping Scale
     @Column(name = "id_grade_scale")
     private Short gradeScaleId;
