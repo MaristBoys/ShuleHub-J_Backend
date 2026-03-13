@@ -166,7 +166,7 @@ public class SchoolConfigService {
         return YearRoomDetailDTO.builder()
                 .yearRoomId(view.getYearRoomId())
                 .roomName(view.getRoomName())
-                .formNum(view.getFormNum())
+                .formName(view.getFormName())
                 .currentScales(YearRoomDetailDTO.SelectedScales.builder()
                         .gradeScaleId(view.getGradeScaleId())
                         .gradeScaleName(view.getGradeScaleName())

@@ -229,7 +229,7 @@ public class SchoolConfigService_copy {
         return YearRoomDetailDTO.builder()
                 .yearRoomId(view.getYearRoomId())
                 .roomName(view.getRoomName())
-                .formNum(view.getFormNum())
+                .formName(view.getFormName())
                 .currentScales(currentScales)
                 .suggestedScaleIds(suggestions)
                 .build();

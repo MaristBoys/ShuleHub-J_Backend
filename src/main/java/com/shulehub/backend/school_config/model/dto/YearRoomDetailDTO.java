@@ -12,7 +12,7 @@ public class YearRoomDetailDTO {
     // Dati identificativi
     private Integer yearRoomId;
     private String roomName;
-    private Short formNum;
+    private String formName;
 
     // Scale Attuali (ID e Nomi per display immediato)
     private SelectedScales currentScales;
