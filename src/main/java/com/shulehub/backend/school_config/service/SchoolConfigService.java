@@ -180,21 +180,31 @@ public class SchoolConfigService {
         List<YearRoomDetailDTO.StaffAssignmentInfo> staff = teacherAssignmentRepository.findByYearRoomId(yearRoomId)
             .stream()
             .map(ta -> {
-                // Creiamo il builder per la materia (che c'è sempre)
+                // Inizializziamo il builder
                 var builder = YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                    .subjectId(ta.getSubject().getId())
-                    .subjectName(ta.getSubject().getSubjectNameEng())
                     .isClassTeacher(ta.isClassTeacher());
 
-                // Se l'impiegato è assegnato, popoliamo i dati del docente
+                // --- GESTIONE SUBJECT (Materia) ---
+                if (ta.getSubject() != null) {
+                    builder.subjectId(ta.getSubject().getId())
+                        .subjectName(ta.getSubject().getSubjectNameEng());
+                } else {
+                    // Caso in cui il Class Teacher non insegna una materia specifica in questa riga
+                    builder.subjectId(null)
+                        .subjectName("No Subject");
+                }
+
+                // --- GESTIONE EMPLOYEE (Docente) ---
                 if (ta.getEmployee() != null) {
                     builder.teacherId(ta.getEmployee().getId())
-                        .fullName(ta.getEmployee().getPerson().getFullName())
+                        .fullName(ta.getEmployee().getPerson() != null 
+                                ? ta.getEmployee().getPerson().getFullName() 
+                                : "Unknown Name")
                         .isActive(ta.getEmployee().isEmployeeIsActive());
                 } else {
-                    // Se l'impiegato è NULL, mettiamo valori di default
+                    // Cattedra vacante
                     builder.teacherId(null)
-                        .fullName("Vacant / Not Assigned")
+                        .fullName("Not Assigned")
                         .isActive(false);
                 }
 
