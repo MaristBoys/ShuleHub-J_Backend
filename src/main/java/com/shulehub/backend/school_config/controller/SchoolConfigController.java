@@ -37,12 +37,12 @@ public class SchoolConfigController {
     @GetMapping("/rooms/preview")
     public ResponseEntity<ApiResponse<YearRoomDetailDTO>> getRoomPreview(
             @RequestParam Short yearId, 
-            @RequestParam Short roomId) {
+            @RequestParam Short roomNum) {
         
         return ResponseEntity.ok(new ApiResponse<>(
             true, 
             "Preview data generated", 
-            schoolConfigService.getNewYearRoomPreview(yearId, roomId)
+            schoolConfigService.getNewYearRoomPreview(yearId, roomNum)
         ));
     }
 

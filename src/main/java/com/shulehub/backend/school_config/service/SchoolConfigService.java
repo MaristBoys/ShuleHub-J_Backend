@@ -161,10 +161,12 @@ public class SchoolConfigService {
     ****************************************************************************************************/
      // Aggiungi questo metodo in SchoolConfigService.java
 
-    public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomId) {
+    public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomNum) {
         // 1. Recupero la stanza fisica e l'anno
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Stanza non trovata"));
+        // Cerchiamo la stanza fisica tramite il numero (es. 11, 12, 21...)
+        Room room = roomRepository.findByRoomNum(roomNum)
+            .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata per il numero: " + roomNum));
+
         Year year = schoolStructureService.getYearById(yearId);
 
         // 2. Calcolo le scale suggerite usando il nuovo metodo nel service specialistico
@@ -192,12 +194,7 @@ public class SchoolConfigService {
                 .enrolledStudents(new ArrayList<>())
                 .build();
     }
-    
-    
-    
-    
-    
-    
+     
     
     /**
      * Recupera i dettagli completi per il modale di configurazione di una stanza.
