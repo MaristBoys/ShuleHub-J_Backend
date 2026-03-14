@@ -173,6 +173,7 @@ public class SchoolConfigService {
         // 3. Costruisco il DTO "Fake"
         return YearRoomDetailDTO.builder()
                 .yearRoomId(null) // Fondamentale: null indica che non esiste ancora in cfg_year_room
+                .roomId(room.getId())
                 .roomName(room.getRoomName())
                 .formName(room.getForm().getFormName())
                 .yearName(year.getYearDescription())
@@ -266,10 +267,10 @@ public class SchoolConfigService {
         // 5. Recupera i suggerimenti per le scale 
         Map<String, Short> suggestedScales = indicatorScaleService.getSuggestedScalesByFormNum(detailView.getFormNum());
 
-
         // 6. Assemblaggio finale del DTO
         return YearRoomDetailDTO.builder()
                 .yearRoomId(detailView.getYearRoomId())
+                .roomId(yrEntity.getRoom().getId())
                 .roomName(detailView.getRoomName())
                 .formName(detailView.getFormName())
                 .yearName(yrEntity.getYear().getYearDescription())

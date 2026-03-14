@@ -11,6 +11,7 @@ import java.util.UUID;
 public class YearRoomDetailDTO {
     // 1. DATI IDENTIFICATIVI & HEADER
     private Integer yearRoomId;
+    private Short roomId;
     private String roomName;
     private String formName;
     private String yearName;
