@@ -87,10 +87,44 @@ public class IndicatorScaleService {
             }).collect(Collectors.toList());
     }
 
+    
     /**
-     * CALCOLO SUGGERIMENTI
+     * Logica di business per suggerire le scale in base al numero del Form (formNum).
+     * Utilizzato sia per il pre-popolamento dei DTO che per l'assegnazione automatica
+     * delle scale durante la creazione di una nuova YearRoom.
+     */
+    public Map<String, Short> getSuggestedScalesByFormNum(Short formNum) {
+        Map<String, Short> suggestions = new HashMap<>();
+        
+        // Se formNum è null, evitiamo crash e restituiamo una mappa vuota o dei default assoluti
+        if (formNum == null) {
+            return suggestions;
+        }
+
+        // Logica basata sul livello (formNum): 
+        // Assumiamo Form 1-4 = O-Level/Primary, Form 5-6 = A-Level/Advanced
+        if (formNum <= 4) {
+            suggestions.put("GRADE", (short) 1);         // ID scala O-Level
+            suggestions.put("DIVISION", (short) 3);      // ID scala O-Level
+            suggestions.put("CONDUCT_ALPHA", (short) 5); 
+            suggestions.put("CONDUCT_TEXT", (short) 6);
+        } else {
+            suggestions.put("GRADE", (short) 2);         // ID scala A-Level
+            suggestions.put("DIVISION", (short) 4);      // ID scala A-Level
+            suggestions.put("CONDUCT_ALPHA", (short) 5);
+            suggestions.put("CONDUCT_TEXT", (short) 6);
+        }
+        
+        return suggestions;
+    }
+    
+    
+    
+    /**
+     * CALCOLO SUGGERIMENTI - NON USATO
      * Questo metodo DEVE accettare YearRoomDetailView
      */
+/*
     @Transactional(readOnly = true)
     public Map<String, Short> calculateSuggestedScales(YearRoomDetailView currentView) {
         Map<String, Short> suggestions = new HashMap<>();
@@ -125,4 +159,6 @@ public class IndicatorScaleService {
             .findFirst()
             .ifPresent(scale -> map.put(type, scale.getId()));
     }
+    */        
 }
+     

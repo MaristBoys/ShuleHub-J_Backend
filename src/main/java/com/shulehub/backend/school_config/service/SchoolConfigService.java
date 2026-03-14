@@ -8,9 +8,10 @@ import com.shulehub.backend.school_config.repository.YearRoomDetailViewRepositor
 import com.shulehub.backend.school_config.repository.YearRoomStatsViewRepository;
 import com.shulehub.backend.school_config.repository.YearRoomStudentRepository;
 import com.shulehub.backend.school_structure.model.entity.Form;
+import com.shulehub.backend.school_structure.model.entity.Room;
 import com.shulehub.backend.school_structure.model.entity.Year;
 import com.shulehub.backend.school_structure.model.entity.YearRoom;
-
+import com.shulehub.backend.school_structure.repository.RoomRepository;
 // Import dei service specialistici per delegare la logica di dominio
 import com.shulehub.backend.indicator_scale.service.IndicatorScaleService;
 import com.shulehub.backend.school_structure.service.SchoolStructureService;
@@ -35,8 +36,9 @@ public class SchoolConfigService {
     //private final YearRoomRepository yearRoomRepository;
     private final YearRoomDetailViewRepository yearRoomDetailViewRepository;
     private final YearRoomStatsViewRepository yearRoomStatsViewRepository;
-    private final TeacherAssignmentRepository teacherAssignmentRepository; // Assicurati che esista
-    private final YearRoomStudentRepository yearRoomStudentRepository;     // Assicurati che esista
+    private final TeacherAssignmentRepository teacherAssignmentRepository; 
+    private final YearRoomStudentRepository yearRoomStudentRepository;
+    private final RoomRepository roomRepository;    
 
     // SERVICE ESTERNI (Orchestrazione)
     private final IndicatorScaleService indicatorScaleService;
@@ -157,9 +159,48 @@ public class SchoolConfigService {
         ROOMS - costruzione modale di dettaglio per ciascuna room (YearRoomDetailDTO)
         Tab Info & Scales - sezione con i dettagli generali della stanza e le scale di valutazione (calcolate da IndicatorScaleService) 
     ****************************************************************************************************/
+     // Aggiungi questo metodo in SchoolConfigService.java
+
+    public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomId) {
+        // 1. Recupero la stanza fisica e l'anno
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Stanza non trovata"));
+        Year year = schoolStructureService.getYearById(yearId);
+
+        // 2. Calcolo le scale suggerite usando il nuovo metodo nel service specialistico
+        Map<String, Short> suggested = indicatorScaleService.getSuggestedScalesByFormNum(room.getForm().getFormNum());
+
+        // 3. Costruisco il DTO "Fake"
+        return YearRoomDetailDTO.builder()
+                .yearRoomId(null) // Fondamentale: null indica che non esiste ancora in cfg_year_room
+                .roomName(room.getRoomName())
+                .formName(room.getForm().getFormName())
+                .yearName(year.getYearDescription())
+                .studentCount(0)
+                .classTeacherName("Not Assigned")
+                .staffingRatio("0/0")
+                // Passiamo le scale suggerite sia come "current" (per pre-popolare i dropdown) che come suggerimenti
+                .currentScales(YearRoomDetailDTO.SelectedScales.builder()
+                        .gradeScaleId(suggested.get("GRADE"))
+                        .divisionScaleId(suggested.get("DIVISION"))
+                        .conductAlphaScaleId(suggested.get("CONDUCT_ALPHA"))
+                        .conductTextScaleId(suggested.get("CONDUCT_TEXT"))
+                        .build())
+                .suggestedScaleIds(suggested)
+                .staffAssignments(new ArrayList<>()) // Liste vuote perché la stanza non è attiva
+                .enrolledStudents(new ArrayList<>())
+                .build();
+    }
+    
+    
+    
+    
+    
+    
+    
     /**
      * Recupera i dettagli completi per il modale di configurazione di una stanza.
-     * non Delega a IndicatorScaleService il calcolo delle scale suggerite.
+     * Delega a IndicatorScaleService il calcolo delle scale suggerite.
      */
     @Transactional(readOnly = true)
     public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId) {
@@ -222,8 +263,9 @@ public class SchoolConfigService {
                         .build())
                 .collect(Collectors.toList());
 
-        // 5. Costruzione dei suggerimenti per le scale (logica che avevi già)
-        Map<String, Short> suggested = getSuggestedScalesForForm(detailView.getFormId());
+        // 5. Recupera i suggerimenti per le scale 
+        Map<String, Short> suggestedScales = indicatorScaleService.getSuggestedScalesByFormNum(detailView.getFormNum());
+
 
         // 6. Assemblaggio finale del DTO
         return YearRoomDetailDTO.builder()
@@ -244,38 +286,11 @@ public class SchoolConfigService {
                         .conductTextScaleId(detailView.getConductTextScaleId())
                         .conductTextScaleName(detailView.getConductTextScaleName())
                         .build())
-                .suggestedScaleIds(suggested)
+                .suggestedScaleIds(suggestedScales)
                 .staffAssignments(staff)
                 .enrolledStudents(students)
                 .build();
     }
-
-
-    /**
-     * Logica di business per suggerire le scale in base al Form.
-     * Questa mappa viene usata dal frontend per pre-selezionare i valori nei dropdown.
-     */
-    private Map<String, Short> getSuggestedScalesForForm(Short formId) {
-        Map<String, Short> suggestions = new HashMap<>();
-        
-        // Esempio di logica: 
-        // Se Form < 5 (Primary), suggeriamo certi ID, altrimenti altri (Secondary)
-        if (formId != null && formId <= 4) {
-            suggestions.put("GRADE", (short) 1);         // ID della scala voti Primary
-            suggestions.put("DIVISION", (short) 3);      // ID della scala divisioni Primary
-            suggestions.put("CONDUCT_ALPHA", (short) 5); 
-            suggestions.put("CONDUCT_TEXT", (short) 6);
-        } else {
-            suggestions.put("GRADE", (short) 2);         // ID della scala voti Secondary
-            suggestions.put("DIVISION", (short) 4);
-            suggestions.put("CONDUCT_ALPHA", (short) 5);
-            suggestions.put("CONDUCT_TEXT", (short) 6);
-        }
-        
-        return suggestions;
-    }
-
-
 
     /**
      * Aggiorna le scale di valutazione per una stanza.

@@ -25,15 +25,30 @@ public class SchoolConfigController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Matrix retrieved", schoolConfigService.getRoomMatrix(yearId)));
     }
 
-    // --- ROOM MODAL DETAILS (Dati aggregati per il modale) ---
-    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOMS')")
+    // --- ROOM MODAL DETAILS (Dati aggregati per il modale per una room esistente) ---
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOM')")
     @GetMapping("/rooms/{id}/details")
     public ResponseEntity<ApiResponse<YearRoomDetailDTO>> getYearRoomDetails(@PathVariable Integer id) {
         return ResponseEntity.ok(new ApiResponse<>(true, "Details retrieved", schoolConfigService.getYearRoomDetails(id)));
     }
+ 
+    // --- ROOM MODAL DETAILS (dto per il preview prima di creare la room chiamato dalla ghost cell) ---
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOM')")
+    @GetMapping("/rooms/preview")
+    public ResponseEntity<ApiResponse<YearRoomDetailDTO>> getRoomPreview(
+            @RequestParam Short yearId, 
+            @RequestParam Short roomId) {
+        
+        return ResponseEntity.ok(new ApiResponse<>(
+            true, 
+            "Preview data generated", 
+            schoolConfigService.getNewYearRoomPreview(yearId, roomId)
+        ));
+    }
+
 
     // --- UPDATE ROOM SCALES (Aggiornamento delle scale di valutazione per una stanza) ---
-    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOMS')")
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
     @PutMapping("/rooms/{id}/scales")
     public ResponseEntity<ApiResponse<Void>> updateRoomScales(@PathVariable Integer id, @RequestBody Map<String, Short> scaleIds) {
         schoolConfigService.updateYearRoomScales(id, scaleIds);
