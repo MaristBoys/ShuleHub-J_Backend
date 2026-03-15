@@ -160,7 +160,7 @@ public class SchoolConfigService {
         Tab Info & Scales - sezione con i dettagli generali della stanza e le scale di valutazione (calcolate da IndicatorScaleService) 
     ****************************************************************************************************/
      // Aggiungi questo metodo in SchoolConfigService.java
-
+    @Transactional(readOnly = true)
     public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomNum) {
         // 1. Recupero la stanza fisica e l'anno
         // Cerchiamo la stanza fisica tramite il numero (es. 11, 12, 21...)
