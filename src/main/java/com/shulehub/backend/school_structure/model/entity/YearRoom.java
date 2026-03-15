@@ -45,4 +45,8 @@ public class YearRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_conduct_text_scale")
     private IndicatorScale conductTextScale;
+
+    // --- YearRoom attiva ---
+    @Column(name = "yearroom_is_active", nullable = false)
+    private Boolean yearRoomIsActive = true;
 }

@@ -12,6 +12,7 @@ import com.shulehub.backend.school_structure.model.entity.Room;
 import com.shulehub.backend.school_structure.model.entity.Year;
 import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.school_structure.repository.RoomRepository;
+import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 // Import dei service specialistici per delegare la logica di dominio
 import com.shulehub.backend.indicator_scale.service.IndicatorScaleService;
 import com.shulehub.backend.school_structure.service.SchoolStructureService;
@@ -19,8 +20,11 @@ import com.shulehub.backend.subject.service.SubjectService;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,12 +37,15 @@ import java.util.stream.Collectors;
 public class SchoolConfigService {
 
     // REPOSITORY LOCALI
-    //private final YearRoomRepository yearRoomRepository;
     private final YearRoomDetailViewRepository yearRoomDetailViewRepository;
     private final YearRoomStatsViewRepository yearRoomStatsViewRepository;
-    private final TeacherAssignmentRepository teacherAssignmentRepository; 
     private final YearRoomStudentRepository yearRoomStudentRepository;
-    private final RoomRepository roomRepository;    
+    
+    
+    // REPOSITORY ESTERNI (bisognorebbe passare dal service)
+    private final YearRoomRepository yearRoomRepository;
+    private final RoomRepository roomRepository;
+    private final TeacherAssignmentRepository teacherAssignmentRepository; 
 
     // SERVICE ESTERNI (Orchestrazione)
     private final IndicatorScaleService indicatorScaleService;
@@ -179,6 +186,7 @@ public class SchoolConfigService {
                 .roomName(room.getRoomName())
                 .formName(room.getForm().getFormName())
                 .yearName(year.getYearDescription())
+                .isActive(true)
                 .studentCount(0)
                 .classTeacherName("Not Assigned")
                 .staffingRatio("0/0")
@@ -271,6 +279,7 @@ public class SchoolConfigService {
                 .roomName(detailView.getRoomName())
                 .formName(detailView.getFormName())
                 .yearName(yrEntity.getYear().getYearDescription())
+                .isActive(yrEntity.getYearRoomIsActive())
                 .studentCount(statsView.getStudentCount())
                 .classTeacherName(statsView.getClassTeacherName())
                 .staffingRatio(statsView.getAssignedSubjects() + "/" + statsView.getTotalSubjects())
@@ -290,6 +299,20 @@ public class SchoolConfigService {
                 .build();
     }
 
+    
+    /**
+     * Aggiorna lo stato della YearRoom per abilitare o disabilitare
+     * Questo metodo coordina l'aggiornamento dell'entità YearRoom.
+     */
+    @Transactional
+    public void updateRoomStatus(Integer yearRoomId, Boolean active) {
+        YearRoom yr = yearRoomRepository.findById(yearRoomId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        yr.setYearRoomIsActive(active);
+        // yearRoomRepository.save(yr); // Opzionale con @Transactional
+    }
+    
+    
     /**
      * Aggiorna le scale di valutazione per una stanza.
      * Questo metodo coordina l'aggiornamento dell'entità YearRoom.

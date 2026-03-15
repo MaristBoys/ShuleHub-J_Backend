@@ -15,6 +15,7 @@ public class YearRoomDetailDTO {
     private String roomName;
     private String formName;
     private String yearName;
+    private Boolean isActive; // yearroom_is_active
     
     // Badge di sintesi per l'header
     private Integer studentCount;
