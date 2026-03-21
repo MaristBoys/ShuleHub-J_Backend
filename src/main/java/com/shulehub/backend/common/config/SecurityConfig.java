@@ -55,6 +55,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/subjects/**").authenticated()
                 .requestMatchers("/api/v1/school-structure/**").authenticated()
                 .requestMatchers("/api/v1/indicator-scales/**").authenticated()
+                .requestMatchers("/api/v1/teacher-assignments/**").authenticated()
 
                 // 3. Per tutte le altre rotte non specificate, richiediamo autenticazione
                 .anyRequest().authenticated()
