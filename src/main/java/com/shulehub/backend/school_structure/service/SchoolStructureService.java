@@ -37,7 +37,7 @@ public class SchoolStructureService {
     public Year getActiveYear() {
         return yearRepository.findByYearIsActiveTrue()
                 .orElseThrow(() -> new RuntimeException("Year not found"));
-}
+    }
 
 
     // Metodo per recuperare la lista completa degli anni (ordinati per anno decrescente)
@@ -78,6 +78,12 @@ public class SchoolStructureService {
         yearRepository.save(year);
     }
 
+
+    
+    /***************************************************************************************************
+     FORM MANAGEMENT
+     ****************************************************************************************************/
+
     // Metodo per recuperare la lista completa dei Form (ordinati per numero)
     @Transactional(readOnly = true)
     public List<Form> getAllForms() {
@@ -92,7 +98,10 @@ public class SchoolStructureService {
     }
 
 
-    // In SchoolStructureService.java
+    
+    /***************************************************************************************************
+     YEAR-ROOM MANAGEMENT
+     ****************************************************************************************************/
 
     @Transactional(readOnly = true)
     public List<YearRoom> getYearRoomsByYearId(Short yearId) {
@@ -110,9 +119,20 @@ public class SchoolStructureService {
         return yearRoomRepository.countByYearId(yearId);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public long countActiveYearRoomsByYearId(Short yearId) {
+        return yearRoomRepository.countByYearIdAndYearRoomIsActiveTrue(yearId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countTotalYearRoomsByYearId(Short yearId) {
+        return yearRoomRepository.countByYearId(yearId);
+    }
+
+     @Transactional
     public void saveYearRoom(YearRoom yearRoom) {
         yearRoomRepository.save(yearRoom);
     }
+
 
 }

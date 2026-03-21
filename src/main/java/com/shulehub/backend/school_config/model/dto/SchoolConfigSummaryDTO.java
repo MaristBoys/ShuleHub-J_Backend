@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class SchoolConfigSummaryDTO {
     private Short yearId;
     private Short currentYear;
-    private long activeRoomsCount;
+    private long activeRoomsCount; // Quelle con isActive = true
+    private long totalRoomsCount;  // Tutte quelle a sistema per l'anno
     private long totalSubjectsCount;
 }

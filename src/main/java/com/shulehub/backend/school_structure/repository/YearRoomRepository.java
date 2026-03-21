@@ -13,11 +13,18 @@ import java.util.Optional;
 public interface YearRoomRepository extends JpaRepository<YearRoom, Integer> {
 
     /**
-     * Conta quante stanze sono attive per un determinato ID anno.
+     * Conta tutte le stanze configurate per l'anno (sia attive che inattive).
      * Fondamentale per la Card della Dashboard.
      */
     long countByYearId(Short yearId);
 
+    /**
+     * Conta le stanze effettivamente attive (operative) per l'anno.
+     * utilizzato nella card della Dashboard Config
+     */
+    long countByYearIdAndYearRoomIsActiveTrue(Short yearId);
+
+   
     /**
      * Recupera tutte le YearRoom di un anno specifico.
      * Nota: grazie ai fetch LAZY, non caricherà subito tutti i dati delle scale

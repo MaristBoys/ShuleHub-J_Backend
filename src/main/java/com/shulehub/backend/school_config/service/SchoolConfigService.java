@@ -64,11 +64,17 @@ public class SchoolConfigService {
     public SchoolConfigSummaryDTO getSchoolConfigSummary() {
         Year activeYear = schoolStructureService.getActiveYear(); // Recupera l'anno attivo tramite il service dedicato
 
+        // Recuperiamo i due conteggi distinti tramite i nuovi metodi del service
+        long activeRooms = schoolStructureService.countActiveYearRoomsByYearId(activeYear.getId());
+        long totalRooms = schoolStructureService.countTotalYearRoomsByYearId(activeYear.getId());
+        long activeSubjects = subjectService.countActiveSubjects();
+
         return new SchoolConfigSummaryDTO(
                 activeYear.getId(),
                 activeYear.getYear(),
-                schoolStructureService.countYearRoomsByYearId(activeYear.getId()), 
-                subjectService.countActiveSubjects()
+                activeRooms,    // Campo per le stanze con yearRoomIsActive = true
+                totalRooms,     // Nuovo campo per il totale delle stanze configurate
+                activeSubjects
         );
     }
 
@@ -144,7 +150,7 @@ public class SchoolConfigService {
                     cells.put(sNum, new YearRoomSummaryDTO(
                         match.getId(), 
                         match.getRoom().getRoomName(), 
-                        true, // isAssigned
+                        true, // isAssigned, la room esiste e non è una ghost cell
                         stats != null ? stats.isYearroomIsActive() : true,
                         stats != null ? stats.getStudentCount() : 0,
                         stats != null ? stats.getClassTeacherId() : null,
