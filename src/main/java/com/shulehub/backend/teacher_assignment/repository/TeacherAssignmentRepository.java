@@ -2,8 +2,6 @@ package com.shulehub.backend.teacher_assignment.repository;
 
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
 import com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO;
-//import com.shulehub.backend.school_config.model.entity.YearRoom; // non serve più, la query ora fa tutto con i join
-//import com.shulehub.backend.subject.model.entity.Subject;      // non serve più, la query ora fa tutto con i join
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 //Sta utilizzando una tecnica chiamata "Constructor Projection"
@@ -42,12 +41,46 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
             @Param("activeYearId") Short activeYearId
     );
 
-
     /**
      * Recupera tutti i docenti e le materie assegnate a una specifica YearRoom.
      * Spring JPA navigherà automaticamente la relazione 'yearRoom' e userà l'ID.
      */
     List<TeacherAssignment> findByYearRoomId(Integer yearRoomId);
+
+
+
+
+    /**
+     * Recupera l'assegnazione del Class Teacher per una specifica YearRoom.
+     * Per convenzione, il Class Teacher ha subject = null e classTeacher = true.
+     */
+    Optional<TeacherAssignment> findByYearRoomIdAndSubjectIsNullAndClassTeacherTrue(Integer yearRoomId);
+
+    /**
+     * Recupera tutte le assegnazioni (Staffing) per una stanza, escluso il Class Teacher.
+     * Utile per popolare il tab Staffing nel modale.
+     */
+    @Query("SELECT ta FROM TeacherAssignment ta " +
+           "JOIN FETCH ta.employee e " +
+           "JOIN FETCH e.person " +
+           "JOIN FETCH ta.subject s " +
+           "WHERE ta.yearRoom.id = :yearRoomId " +
+           "AND ta.subject IS NOT NULL " +
+           "ORDER BY s.subjectNameEng ASC")
+    List<TeacherAssignment> findStaffingByYearRoomId(@Param("yearRoomId") Integer yearRoomId);
+
+    /**
+     * Trova un'assegnazione specifica per materia.
+     * Utile quando dobbiamo aggiornare il docente di una materia già presente.
+     */
+    Optional<TeacherAssignment> findByYearRoomIdAndSubjectId(Integer yearRoomId, Short subjectId);
+
+    /**
+     * Verifica se un docente è già impegnato come Class Teacher in un'altra stanza
+     * nello stesso anno scolastico (evita sovrapposizioni).
+     */
+    boolean existsByEmployeeIdAndYearRoomYearIdAndClassTeacherTrue(UUID employeeId, Short yearId);
+
 }
 
 
