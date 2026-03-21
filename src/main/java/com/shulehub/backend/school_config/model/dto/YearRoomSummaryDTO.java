@@ -16,6 +16,7 @@ public class YearRoomSummaryDTO {
     private Integer yearRoomId;
     private String roomName;
     private boolean isAssigned;
+    private Boolean isActive; // yearroom_is_active
     
     // Nuovi campi per la Dashboard
     private Integer studentCount;

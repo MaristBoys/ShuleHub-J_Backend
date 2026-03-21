@@ -39,7 +39,6 @@ public class SchoolConfigController {
         ));
     }
 
-
      // --- ROOM MODAL DETAILS (toggle che gestisce lo stato della yearRoom) ---
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_EDIT_ROOM')")
     @PatchMapping("/rooms/{id}/status")
@@ -49,7 +48,6 @@ public class SchoolConfigController {
         schoolConfigService.updateRoomStatus(id, active);
         return ResponseEntity.ok(new ApiResponse<>(true, "Stato stanza aggiornato", null));
     }
-    
     
     // --- ROOM MODAL DETAILS (Dati aggregati per il modale per una room esistente) ---
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOM')")

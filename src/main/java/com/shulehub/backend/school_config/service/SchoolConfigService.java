@@ -145,6 +145,7 @@ public class SchoolConfigService {
                         match.getId(), 
                         match.getRoom().getRoomName(), 
                         true, // isAssigned
+                        stats != null ? stats.isYearroomIsActive() : true,
                         stats != null ? stats.getStudentCount() : 0,
                         stats != null ? stats.getClassTeacherId() : null,
                         stats != null ? stats.getClassTeacherName() : "No CT assigned",
@@ -153,7 +154,7 @@ public class SchoolConfigService {
                     ));
                 } else {
                     // Cella vuota: il frontend mostrerà il tasto "+"
-                    cells.put(sNum, new YearRoomSummaryDTO(null, null, false, 0, null, null, null, 0.0));
+                    cells.put(sNum, new YearRoomSummaryDTO(null, null, false,false, 0, null, null, null, 0.0));
                 }
             }
             rows.add(new FormRowDTO(form.getFormNum(), form.getFormName(), cells));

@@ -18,6 +18,9 @@ public class YearRoomStatsView {
     @Column(name = "id_year")
     private Short yearId;
 
+    @Column(name= "yearroom_is_active")
+    private boolean yearroomIsActive;
+
     @Column(name = "student_count")
     private Integer studentCount;
 
