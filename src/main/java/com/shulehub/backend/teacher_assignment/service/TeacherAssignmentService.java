@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -45,31 +46,44 @@ public class TeacherAssignmentService {
 
     /**
      * Assegna o aggiorna il Class Teacher di una stanza.
+     * prevede anche il caso di svuotarlo
      * Logica: Cerca se esiste già un record con subject=null, se sì lo aggiorna, altrimenti lo crea.
      */
     @Transactional
     public void assignClassTeacher(Integer yearRoomId, UUID employeeId) {
-        // 1. Recuperiamo l'impiegato e la stanza
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
-        YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
-                .orElseThrow(() -> new RuntimeException("YearRoom not found"));
+        // 1. Cerchiamo se esiste già un'assegnazione Class Teacher per questa stanza
+        // Usiamo il metodo già presente nel repository
+        Optional<TeacherAssignment> existingAssignment = assignmentRepository
+                .findByYearRoomIdAndSubjectIsNullAndClassTeacherTrue(yearRoomId);
 
-        // 2. Cerchiamo se esiste già un Class Teacher assegnato a questa stanza
-        TeacherAssignment assignment = assignmentRepository
-                .findByYearRoomIdAndSubjectIsNullAndClassTeacherTrue(yearRoomId)
-                .orElse(new TeacherAssignment());
-
-        // 3. Impostiamo/Aggiorniamo i dati
-        if (assignment.getId() == null) {
-            assignment.setYearRoom(yearRoom);
-            assignment.setSubject(null); // Il Class Teacher non è legato a una materia specifica qui
-            assignment.setClassTeacher(true);
+        // 2. CASO RIMOZIONE: Se l'ID dell'impiegato è null, procediamo al delete
+        if (employeeId == null) {
+            existingAssignment.ifPresent(assignment -> {
+                // Utilizziamo il metodo delete predefinito di JpaRepository
+                assignmentRepository.delete(assignment);
+            });
+            return; 
         }
-        
-        assignment.setEmployee(employee);
 
+        // 3. CASO ASSEGNAZIONE O UPDATE:
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+        
+        // Se l'assegnazione esiste già, la aggiorniamo, altrimenti ne creiamo una nuova
+        TeacherAssignment assignment = existingAssignment.orElseGet(() -> {
+            YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
+                    .orElseThrow(() -> new RuntimeException("YearRoom not found with ID: " + yearRoomId));
+            
+            TeacherAssignment newAssignment = new TeacherAssignment();
+            newAssignment.setYearRoom(yearRoom);
+            newAssignment.setSubject(null);
+            newAssignment.setClassTeacher(true);
+            return newAssignment;
+        });
+
+        assignment.setEmployee(employee);
+        
+        // Il save gestisce sia l'inserimento del nuovo che l'update dell'esistente
         assignmentRepository.save(assignment);
     }
 
