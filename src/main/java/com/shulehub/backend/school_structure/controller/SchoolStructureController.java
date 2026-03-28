@@ -1,6 +1,7 @@
 package com.shulehub.backend.school_structure.controller;
 
 import com.shulehub.backend.common.response.ApiResponse;
+import com.shulehub.backend.school_structure.model.entity.Room;
 import com.shulehub.backend.school_structure.model.entity.Year;
 import com.shulehub.backend.school_structure.service.SchoolStructureService;
 
@@ -34,4 +35,13 @@ public class SchoolStructureController {
         schoolStructureService.updateActiveYear(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Year activated", null));
     }
+
+
+    @GetMapping("/rooms/{id}")
+    public ResponseEntity<ApiResponse<Room>> getRoomById(@PathVariable Short id) {
+        return ResponseEntity.ok(new ApiResponse<>(true, "Room retrieved", schoolStructureService.getRoomById(id)));
+    }
+
+
+
 }

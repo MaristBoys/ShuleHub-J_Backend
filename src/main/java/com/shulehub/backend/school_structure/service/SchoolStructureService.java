@@ -4,7 +4,9 @@ import com.shulehub.backend.school_structure.model.entity.Year;
 import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.school_structure.repository.YearRepository;
 import com.shulehub.backend.school_structure.model.entity.Form;
+import com.shulehub.backend.school_structure.model.entity.Room;
 import com.shulehub.backend.school_structure.repository.FormRepository;
+import com.shulehub.backend.school_structure.repository.RoomRepository;
 import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import java.util.List;
 public class SchoolStructureService {
 
     private final YearRepository yearRepository;
+    private final RoomRepository roomRepository;
     private final FormRepository formRepository;
     private final YearRoomRepository yearRoomRepository; 
 
@@ -79,7 +82,20 @@ public class SchoolStructureService {
     }
 
 
+
     
+    /***************************************************************************************************
+     ROOM MANAGEMENT
+     ****************************************************************************************************/
+
+    // Aggiungi questo metodo nella sezione ROOMS MANAGEMENT (o dove preferisci)
+    @Transactional(readOnly = true)
+    public Room getRoomById(Short id) {
+        return roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata con ID: " + id));
+    }
+
+
     /***************************************************************************************************
      FORM MANAGEMENT
      ****************************************************************************************************/

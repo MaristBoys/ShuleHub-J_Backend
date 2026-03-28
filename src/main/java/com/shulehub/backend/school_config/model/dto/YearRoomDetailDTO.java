@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO.SelectedScales;
+
 @Data
 @Builder
 public class YearRoomDetailDTO {
@@ -22,9 +24,11 @@ public class YearRoomDetailDTO {
     private String classTeacherName;
     private String staffingRatio; 
 
-    // 2. TAB SCALES
+    // 2. TAB SCALES 
+    // Se la stanza è nuova, da Ghost Cell
+    // il backend lo popolerà con i suggerimenti.
     private SelectedScales currentScales;
-    private Map<String, Short> suggestedScaleIds;
+
 
     // 3. TAB STAFFING
     private List<StaffAssignmentInfo> staffAssignments;

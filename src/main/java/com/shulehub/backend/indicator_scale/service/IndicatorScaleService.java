@@ -4,6 +4,7 @@ import com.shulehub.backend.indicator_scale.model.dto.IndicatorScaleDTO;
 import com.shulehub.backend.indicator_scale.model.entity.IndicatorScale;
 import com.shulehub.backend.indicator_scale.repository.IndicatorScaleRangeRepository;
 import com.shulehub.backend.indicator_scale.repository.IndicatorScaleRepository;
+import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 import com.shulehub.backend.school_config.model.view.YearRoomDetailView;
 import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -89,11 +90,60 @@ public class IndicatorScaleService {
 
     
     /**
-     * Logica di business per suggerire le scale in base al numero del Form (formNum).
-     * Utilizzato sia per il pre-popolamento dei DTO che per l'assegnazione automatica
-     * delle scale durante la creazione di una nuova YearRoom.
+     * Recupera i suggerimenti basati esclusivamente sul numero della Form.
+     * Restituisce un oggetto SelectedScales già popolato con nomi e ID.
      */
-    public Map<String, Short> getSuggestedScalesByFormNum(Short formNum) {
+    @Transactional(readOnly = true)
+    public YearRoomDetailDTO.SelectedScales getSuggestedScalesByForm(Short formNum) {
+        Map<String, Short> ids = new HashMap<>();
+        
+        // Eseguiamo la ricerca per ogni tipo di indicatore
+        findTopSuggested(ids, "GRADE", formNum);
+        findTopSuggested(ids, "DIVISION", formNum);
+        findTopSuggested(ids, "CONDUCT_ALPHA", formNum);
+        findTopSuggested(ids, "CONDUCT_TEXT", formNum);
+
+        // Costruiamo l'oggetto per il DTO recuperando i nomi corrispondenti
+        return YearRoomDetailDTO.SelectedScales.builder()
+                .gradeScaleId(ids.get("GRADE"))
+                .gradeScaleName(getScaleNameOrDefault(ids.get("GRADE")))
+                
+                .divisionScaleId(ids.get("DIVISION"))
+                .divisionScaleName(getScaleNameOrDefault(ids.get("DIVISION")))
+                
+                .conductAlphaScaleId(ids.get("CONDUCT_ALPHA"))
+                .conductAlphaScaleName(getScaleNameOrDefault(ids.get("CONDUCT_ALPHA")))
+                
+                .conductTextScaleId(ids.get("CONDUCT_TEXT"))
+                .conductTextScaleName(getScaleNameOrDefault(ids.get("CONDUCT_TEXT")))
+                .build();
+    }
+
+    /**
+     * Metodo Helper: Cerca la prima scala suggerita nel DB che soddisfa il range del formNum.
+     * Utilizza la query personalizzata nel repository.
+     */
+    private void findTopSuggested(Map<String, Short> map, String type, Short formNum) {
+        if (formNum == null) return;
+        
+        // findSuggestedScales è il metodo nel tuo repository con la clausola BETWEEN
+        indicatorScaleRepository.findSuggestedScales(type, formNum).stream()
+            .findFirst()
+            .ifPresent(scale -> map.put(type, scale.getId()));
+    }
+
+    /**
+     * Metodo Helper: Recupera il nome della scala per il DTO o un default se non trovata.
+     */
+    private String getScaleNameOrDefault(Short id) {
+        if (id == null) return "Not Assigned";
+        return indicatorScaleRepository.findById(id)
+                .map(IndicatorScale::getScaleName)
+                .orElse("Not Assigned");
+    }
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
+/*    public Map<String, Short> getSuggestedScalesByFormNum(Short formNum) {
         Map<String, Short> suggestions = new HashMap<>();
         
         // Se formNum è null, evitiamo crash e restituiamo una mappa vuota o dei default assoluti
@@ -117,7 +167,7 @@ public class IndicatorScaleService {
         
         return suggestions;
     }
-    
+*/  
     
     
     /**

@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,7 +174,8 @@ public class SchoolConfigService {
         ROOMS - costruzione modale di dettaglio per ciascuna room (YearRoomDetailDTO)
         Tab Info & Scales - sezione con i dettagli generali della stanza e le scale di valutazione (calcolate da IndicatorScaleService) 
     ****************************************************************************************************/
-     // Aggiungi questo metodo in SchoolConfigService.java
+
+/*        PREVIEW GESTITO NEL METODO SOTTO getYearRoomDetails
     @Transactional(readOnly = true)
     public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomNum) {
         // 1. Recupero la stanza fisica e l'anno
@@ -204,23 +206,22 @@ public class SchoolConfigService {
                         .conductAlphaScaleId(suggested.get("CONDUCT_ALPHA"))
                         .conductTextScaleId(suggested.get("CONDUCT_TEXT"))
                         .build())
-                .suggestedScaleIds(suggested)
                 .staffAssignments(new ArrayList<>()) // Liste vuote perché la stanza non è attiva
                 .enrolledStudents(new ArrayList<>())
                 .build();
     }
-     
-    
+ */   
     /**
      * Recupera i dettagli completi per il modale di configurazione di una stanza.
      * Delega a IndicatorScaleService il calcolo delle scale suggerite.
      */
+/*
     @Transactional(readOnly = true)
     public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId) {
-        // 1. Recupero l'entità YearRoom per avere accesso a Year e Room direttamente
-        // Usiamo il service della struttura che hai già
-        YearRoom yrEntity = schoolStructureService.getYearRoomById(yearRoomId);
         
+        // 1. Recupero l'entità YearRoom per avere accesso a Year e Room direttamente
+        // Usiamo il service della structure
+        YearRoom yrEntity = schoolStructureService.getYearRoomById(yearRoomId);    
         
         // 1. Recupero i dati base e le scale dalla View di dettaglio
         YearRoomDetailView detailView = yearRoomDetailViewRepository.findById(yearRoomId)
@@ -300,11 +301,133 @@ public class SchoolConfigService {
                         .conductTextScaleId(detailView.getConductTextScaleId())
                         .conductTextScaleName(detailView.getConductTextScaleName())
                         .build())
-                .suggestedScaleIds(suggestedScales)
                 .staffAssignments(staff)
                 .enrolledStudents(students)
                 .build();
     }
+*/
+
+    /**
+     * Recupera i dettagli completi per il modale di configurazione di una stanza.
+     * Gestisce sia stanze esistenti che "Ghost Cells" (nuove attivazioni).
+     */
+    @Transactional(readOnly = true)
+    public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId, Short roomId, Short yearId) {
+        
+        YearRoomDetailDTO.SelectedScales currentScales;
+        YearRoomDetailDTO.YearRoomDetailDTOBuilder dtoBuilder = YearRoomDetailDTO.builder();
+
+        if (yearRoomId != null) {
+            // --- CASO A: STANZA ESISTENTE ---
+            YearRoom yrEntity = schoolStructureService.getYearRoomById(yearRoomId);
+            
+            YearRoomDetailView detailView = yearRoomDetailViewRepository.findByYearRoomId(yearRoomId)
+                    .orElseThrow(() -> new RuntimeException("YearRoom details not found for ID: " + yearRoomId));
+            
+            YearRoomStatsView statsView = yearRoomStatsViewRepository.findById(yearRoomId)
+                    .orElse(new YearRoomStatsView());
+
+            // Popolamento Scale Effettive dal Database (tramite View)
+            currentScales = YearRoomDetailDTO.SelectedScales.builder()
+                    .gradeScaleId(detailView.getGradeScaleId())
+                    .gradeScaleName(detailView.getGradeScaleName())
+                    .divisionScaleId(detailView.getDivisionScaleId())
+                    .divisionScaleName(detailView.getDivisionScaleName())
+                    .conductAlphaScaleId(detailView.getConductAlphaScaleId())
+                    .conductAlphaScaleName(detailView.getConductAlphaScaleName())
+                    .conductTextScaleId(detailView.getConductTextScaleId())
+                    .conductTextScaleName(detailView.getConductTextScaleName())
+                    .build();
+
+            // Dati Header e liste
+            dtoBuilder.yearRoomId(yearRoomId)
+                      .roomId(yrEntity.getRoom().getId())
+                      .roomName(detailView.getRoomName())
+                      .formName(detailView.getFormName())
+                      .yearName(yrEntity.getYear().getYearDescription())
+                      .isActive(yrEntity.getYearRoomIsActive())
+                      .studentCount(statsView.getStudentCount())
+                      .classTeacherName(statsView.getClassTeacherName())
+                      .staffingRatio(statsView.getAssignedSubjects() + "/" + statsView.getTotalSubjects())
+                      .staffAssignments(getStaffAssignments(yearRoomId))
+                      .enrolledStudents(getEnrolledStudents(yearRoomId));
+        } 
+        else {
+            // --- CASO B: GHOST CELL (NUOVA STANZA) ---
+            // Recuperiamo le entità di base per popolare l'header del modale
+            Room room = schoolStructureService.getRoomById(roomId);
+            Year year = schoolStructureService.getYearById(yearId);
+
+            // LOGICA SMART DEFAULT:
+            // Chiamiamo il metodo che cerca le scale suggerite in base al range FormFrom/To
+            // Il metodo restituisce già l'oggetto SelectedScales con ID e Nomi popolati.
+            currentScales = indicatorScaleService.getSuggestedScalesByForm(room.getForm().getFormNum());
+
+            dtoBuilder.yearRoomId(null)
+                      .roomId(roomId)
+                      .roomName(room.getRoomName())
+                      .formName(room.getForm().getFormName())
+                      .yearName(year.getYearDescription())
+                      .isActive(false)
+                      .studentCount(0)
+                      .classTeacherName("Not Assigned")
+                      .staffingRatio("0/0")
+                      .staffAssignments(Collections.emptyList())
+                      .enrolledStudents(Collections.emptyList());
+        }
+
+        return dtoBuilder.currentScales(currentScales).build();
+    }
+
+    // --- METODI PRIVATI DI SUPPORTO PER LA PULIZIA DEL CODICE ---
+
+    private List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignments(Integer yearRoomId) {
+        return teacherAssignmentRepository.findByYearRoomId(yearRoomId)
+                .stream()
+                .map(ta -> {
+                    var builder = YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                            .isClassTeacher(ta.isClassTeacher());
+
+                    // Gestione Subject
+                    if (ta.getSubject() != null) {
+                        builder.subjectId(ta.getSubject().getId())
+                               .subjectName(ta.getSubject().getSubjectNameEng());
+                    } else {
+                        builder.subjectId(null)
+                               .subjectName("No Subject");
+                    }
+
+                    // Gestione Employee (Docente)
+                    if (ta.getEmployee() != null) {
+                        builder.teacherId(ta.getEmployee().getId())
+                               .fullName(ta.getEmployee().getPerson() != null 
+                                       ? ta.getEmployee().getPerson().getFullName() 
+                                       : "Unknown Name")
+                               .isActive(ta.getEmployee().isEmployeeIsActive());
+                    } else {
+                        builder.teacherId(null)
+                               .fullName("Not Assigned")
+                               .isActive(false);
+                    }
+
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<YearRoomDetailDTO.StudentListItemDTO> getEnrolledStudents(Integer yearRoomId) {
+        return yearRoomStudentRepository.findByYearRoomId(yearRoomId)
+                .stream()
+                .map(yrs -> YearRoomDetailDTO.StudentListItemDTO.builder()
+                        .studentId(yrs.getStudent().getId())
+                        .fullName(yrs.getStudent().getPerson().getFullName())
+                        .isActive(yrs.getStudent().isStudentIsActive())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
+
 
     
     /**
