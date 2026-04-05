@@ -118,7 +118,7 @@ public class TeacherAssignmentService {
         assignment.setEmployee(employee);
         assignmentRepository.save(assignment);
     }
-
+/*
     public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
     // Usiamo il metodo del repository che recupera tutto lo staffing
     List<TeacherAssignment> assignments = assignmentRepository.findByYearRoomId(yearRoomId);
@@ -149,6 +149,30 @@ public class TeacherAssignmentService {
                     .build();
             })
             .toList(); // Scorciatoia per .collect(Collectors.toList()) in Java 17+
+    }
+*/
+
+    
+
+    public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
+        // Usiamo il metodo del repository che filtra già il Class Teacher (subject IS NOT NULL)
+        List<TeacherAssignment> assignments = assignmentRepository.findStaffingByYearRoomId(yearRoomId);
+
+        return assignments.stream()
+            .map(ta -> {
+                return YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                    .subjectId(ta.getSubject().getId())
+                    .subjectName(ta.getSubject().getSubjectNameEng())
+                    .subjectAbbr(ta.getSubject().getSubjectAbbr()) // <--- Ora arriva dal DB
+                    .teacherId(ta.getEmployee() != null ? ta.getEmployee().getId() : null)
+                    .fullName(ta.getEmployee() != null && ta.getEmployee().getPerson() != null 
+                                ? ta.getEmployee().getPerson().getFullName() 
+                                : "Not Assigned")
+                    .isClassTeacher(ta.isClassTeacher())
+                    .isActive(ta.getEmployee() != null && ta.getEmployee().isEmployeeIsActive())
+                    .build();
+            })
+            .toList();
     }
 
 }
