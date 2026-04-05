@@ -4,7 +4,11 @@ import com.shulehub.backend.common.response.ApiResponse;
 import com.shulehub.backend.school_config.model.dto.RoomMatrixDTO;
 import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 import com.shulehub.backend.school_config.service.SchoolConfigService;
+import com.shulehub.backend.school_structure.model.entity.YearRoom;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -90,4 +94,26 @@ public class SchoolConfigController {
         schoolConfigService.updateYearRoomScales(id, scaleIds);
         return ResponseEntity.ok(new ApiResponse<>(true, "Scales updated", null));
     }
+
+    // --- ASSIGN ROOM (Creazione di una stanza con assegnazione delle scale in un unico endpoint) ---
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
+    @PostMapping("/rooms/assign")
+    public ResponseEntity<ApiResponse<YearRoom>> assignRoom(@RequestBody Map<String, Object> payload) {
+        // Estraiamo i dati dalla mappa (gestendo i cast visto che JS manda numeri/stringhe)
+        Short roomNum = ((Number) payload.get("roomNum")).shortValue();
+        Short yearId = ((Number) payload.get("yearId")).shortValue();
+        Boolean isActive = (Boolean) payload.get("isActive");
+        
+        // Passiamo il resto della mappa (le scale) al service
+        YearRoom newConfig = schoolConfigService.assignRoom(roomNum, yearId, isActive, payload);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Room activated successfully", newConfig));
+    }
+
+
+
+
+
+
 }

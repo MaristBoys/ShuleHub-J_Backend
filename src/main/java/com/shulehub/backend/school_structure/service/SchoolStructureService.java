@@ -95,13 +95,11 @@ public class SchoolStructureService {
                 .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata con ID: " + id));
     }
 
-
     @Transactional(readOnly = true)
     public Room getRoomByNum(Short roomNum) {
         return roomRepository.findByRoomNum(roomNum)
                 .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata con numero: " + roomNum));
     }
-
 
     /***************************************************************************************************
      FORM MANAGEMENT
@@ -152,10 +150,10 @@ public class SchoolStructureService {
         return yearRoomRepository.countByYearId(yearId);
     }
 
-     @Transactional
-    public void saveYearRoom(YearRoom yearRoom) {
-        yearRoomRepository.save(yearRoom);
+     
+    @Transactional
+    public YearRoom saveYearRoom(YearRoom yearRoom) {
+        return yearRoomRepository.save(yearRoom); // Aggiungi return e cambia il tipo del metodo
     }
-
 
 }

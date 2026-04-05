@@ -175,137 +175,6 @@ public class SchoolConfigService {
         Tab Info & Scales - sezione con i dettagli generali della stanza e le scale di valutazione (calcolate da IndicatorScaleService) 
     ****************************************************************************************************/
 
-/*        PREVIEW GESTITO NEL METODO SOTTO getYearRoomDetails
-    @Transactional(readOnly = true)
-    public YearRoomDetailDTO getNewYearRoomPreview(Short yearId, Short roomNum) {
-        // 1. Recupero la stanza fisica e l'anno
-        // Cerchiamo la stanza fisica tramite il numero (es. 11, 12, 21...)
-        Room room = roomRepository.findByRoomNum(roomNum)
-            .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata per il numero: " + roomNum));
-
-        Year year = schoolStructureService.getYearById(yearId);
-
-        // 2. Calcolo le scale suggerite usando il nuovo metodo nel service specialistico
-        Map<String, Short> suggested = indicatorScaleService.getSuggestedScalesByFormNum(room.getForm().getFormNum());
-
-        // 3. Costruisco il DTO "Fake"
-        return YearRoomDetailDTO.builder()
-                .yearRoomId(null) // Fondamentale: null indica che non esiste ancora in cfg_year_room
-                .roomId(room.getId())
-                .roomName(room.getRoomName())
-                .formName(room.getForm().getFormName())
-                .yearName(year.getYearDescription())
-                .isActive(true)
-                .studentCount(0)
-                .classTeacherName("Not Assigned")
-                .staffingRatio("0/0")
-                // Passiamo le scale suggerite sia come "current" (per pre-popolare i dropdown) che come suggerimenti
-                .currentScales(YearRoomDetailDTO.SelectedScales.builder()
-                        .gradeScaleId(suggested.get("GRADE"))
-                        .divisionScaleId(suggested.get("DIVISION"))
-                        .conductAlphaScaleId(suggested.get("CONDUCT_ALPHA"))
-                        .conductTextScaleId(suggested.get("CONDUCT_TEXT"))
-                        .build())
-                .staffAssignments(new ArrayList<>()) // Liste vuote perché la stanza non è attiva
-                .enrolledStudents(new ArrayList<>())
-                .build();
-    }
- */   
-    /**
-     * Recupera i dettagli completi per il modale di configurazione di una stanza.
-     * Delega a IndicatorScaleService il calcolo delle scale suggerite.
-     */
-/*
-    @Transactional(readOnly = true)
-    public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId) {
-        
-        // 1. Recupero l'entità YearRoom per avere accesso a Year e Room direttamente
-        // Usiamo il service della structure
-        YearRoom yrEntity = schoolStructureService.getYearRoomById(yearRoomId);    
-        
-        // 1. Recupero i dati base e le scale dalla View di dettaglio
-        YearRoomDetailView detailView = yearRoomDetailViewRepository.findById(yearRoomId)
-                .orElseThrow(() -> new RuntimeException("YearRoom details not found for ID: " + yearRoomId));
-
-        // 2. Recupero i dati di sintesi (Header) dalla View Stats
-        YearRoomStatsView statsView = yearRoomStatsViewRepository.findById(yearRoomId)
-                .orElse(new YearRoomStatsView()); // Fallback se non ancora calcolate
-
-        // 3. Recupero la lista dei docenti assegnati (Staffing)
-        List<YearRoomDetailDTO.StaffAssignmentInfo> staff = teacherAssignmentRepository.findByYearRoomId(yearRoomId)
-            .stream()
-            .map(ta -> {
-                // Inizializziamo il builder
-                var builder = YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                    .isClassTeacher(ta.isClassTeacher());
-
-                // --- GESTIONE SUBJECT (Materia) ---
-                if (ta.getSubject() != null) {
-                    builder.subjectId(ta.getSubject().getId())
-                        .subjectName(ta.getSubject().getSubjectNameEng());
-                } else {
-                    // Caso in cui il Class Teacher non insegna una materia specifica in questa riga
-                    builder.subjectId(null)
-                        .subjectName("No Subject");
-                }
-
-                // --- GESTIONE EMPLOYEE (Docente) ---
-                if (ta.getEmployee() != null) {
-                    builder.teacherId(ta.getEmployee().getId())
-                        .fullName(ta.getEmployee().getPerson() != null 
-                                ? ta.getEmployee().getPerson().getFullName() 
-                                : "Unknown Name")
-                        .isActive(ta.getEmployee().isEmployeeIsActive());
-                } else {
-                    // Cattedra vacante
-                    builder.teacherId(null)
-                        .fullName("Not Assigned")
-                        .isActive(false);
-                }
-
-                return builder.build();
-            })
-            .collect(Collectors.toList());
-
-        // 4. Recupero la lista degli studenti (Enrollment)
-        List<YearRoomDetailDTO.StudentListItemDTO> students = yearRoomStudentRepository.findByYearRoomId(yearRoomId)
-                .stream()
-                .map(yrs -> YearRoomDetailDTO.StudentListItemDTO.builder()
-                        .studentId(yrs.getStudent().getId())
-                        .fullName(yrs.getStudent().getPerson().getFullName())
-                        .isActive(yrs.getStudent().isStudentIsActive())
-                        .build())
-                .collect(Collectors.toList());
-
-        // 5. Recupera i suggerimenti per le scale 
-        Map<String, Short> suggestedScales = indicatorScaleService.getSuggestedScalesByFormNum(detailView.getFormNum());
-
-        // 6. Assemblaggio finale del DTO
-        return YearRoomDetailDTO.builder()
-                .yearRoomId(detailView.getYearRoomId())
-                .roomId(yrEntity.getRoom().getId())
-                .roomName(detailView.getRoomName())
-                .formName(detailView.getFormName())
-                .yearName(yrEntity.getYear().getYearDescription())
-                .isActive(yrEntity.getYearRoomIsActive())
-                .studentCount(statsView.getStudentCount())
-                .classTeacherName(statsView.getClassTeacherName())
-                .staffingRatio(statsView.getAssignedSubjects() + "/" + statsView.getTotalSubjects())
-                .currentScales(YearRoomDetailDTO.SelectedScales.builder()
-                        .gradeScaleId(detailView.getGradeScaleId())
-                        .gradeScaleName(detailView.getGradeScaleName())
-                        .divisionScaleId(detailView.getDivisionScaleId())
-                        .divisionScaleName(detailView.getDivisionScaleName())
-                        .conductAlphaScaleId(detailView.getConductAlphaScaleId())
-                        .conductAlphaScaleName(detailView.getConductAlphaScaleName())
-                        .conductTextScaleId(detailView.getConductTextScaleId())
-                        .conductTextScaleName(detailView.getConductTextScaleName())
-                        .build())
-                .staffAssignments(staff)
-                .enrolledStudents(students)
-                .build();
-    }
-*/
 
     /**
      * Recupera i dettagli completi per il modale di configurazione di una stanza.
@@ -426,10 +295,7 @@ public class SchoolConfigService {
                 .collect(Collectors.toList());
     }
 
-
-
-
-    
+   
     /**
      * Aggiorna lo stato della YearRoom per abilitare o disabilitare
      * Questo metodo coordina l'aggiornamento dell'entità YearRoom.
@@ -442,7 +308,43 @@ public class SchoolConfigService {
         // yearRoomRepository.save(yr); // Opzionale con @Transactional
     }
     
-    
+    /*
+     * Metodo per assegnare una stanza a un anno (creazione YearRoom) con le scale di valutazione
+     * Questo metodo coordina la creazione dell'entità YearRoom e l'assegnazione delle scale tramite IndicatorScaleService.
+    */
+    @Transactional
+    public YearRoom assignRoom(Short roomNum, Short yearId, Boolean isActive, Map<String, Object> scaleData) {
+        // 1. Recuperiamo le entità fisiche tramite lo SchoolStructureService
+        Room room = schoolStructureService.getRoomByNum(roomNum);
+        Year year = schoolStructureService.getYearById(yearId);
+
+        // 2. Creiamo la nuova configurazione YearRoom
+        YearRoom yearRoom = new YearRoom();
+        yearRoom.setRoom(room);
+        yearRoom.setYear(year);
+        yearRoom.setYearRoomIsActive(isActive != null ? isActive : true);
+
+        // 3. Settiamo le scale usando i metodi che abbiamo già per l'update
+        // Nota: dobbiamo convertire i valori della mappa in Short
+        if (scaleData.containsKey("GRADE")) {
+            yearRoom.setGradeScale(indicatorScaleService.getScaleById(((Number) scaleData.get("GRADE")).shortValue()));
+        }
+        if (scaleData.containsKey("DIVISION")) {
+            yearRoom.setDivisionScale(indicatorScaleService.getScaleById(((Number) scaleData.get("DIVISION")).shortValue()));
+        }
+        if (scaleData.containsKey("CONDUCT_ALPHA")) {
+            yearRoom.setConductAlphaScale(indicatorScaleService.getScaleById(((Number) scaleData.get("CONDUCT_ALPHA")).shortValue()));
+        }
+        if (scaleData.containsKey("CONDUCT_TEXT")) {
+            yearRoom.setConductTextScale(indicatorScaleService.getScaleById(((Number) scaleData.get("CONDUCT_TEXT")).shortValue()));
+        }
+
+        // 4. Salviamo tramite il service della struttura che ha già il repository
+        return schoolStructureService.saveYearRoom(yearRoom);
+    }
+
+
+
     /**
      * Aggiorna le scale di valutazione per una stanza.
      * Questo metodo coordina l'aggiornamento dell'entità YearRoom.
