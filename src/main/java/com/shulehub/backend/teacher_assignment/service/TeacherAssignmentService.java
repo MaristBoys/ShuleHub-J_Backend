@@ -152,27 +152,41 @@ public class TeacherAssignmentService {
     }
 */
 
-    
-
     public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
-        // Usiamo il metodo del repository che filtra già il Class Teacher (subject IS NOT NULL)
         List<TeacherAssignment> assignments = assignmentRepository.findStaffingByYearRoomId(yearRoomId);
 
         return assignments.stream()
             .map(ta -> {
+                // Subject è garantito dal filtro IS NOT NULL nella query, 
+                // ma mettiamo comunque dei fallback di sicurezza
+                String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "Unknown Subject";
+                String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "??";
+                
+                // Gestione Employee e Person (che ora possono essere NULL)
+                UUID tId = (ta.getEmployee() != null) ? ta.getEmployee().getId() : null;
+                
+                String fName = "Not Assigned"; // Default
+                boolean active = false;
+                
+                if (ta.getEmployee() != null) {
+                    active = ta.getEmployee().isEmployeeIsActive();
+                    if (ta.getEmployee().getPerson() != null) {
+                        fName = ta.getEmployee().getPerson().getFullName();
+                    }
+                }
+
                 return YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                    .subjectId(ta.getSubject().getId())
-                    .subjectName(ta.getSubject().getSubjectNameEng())
-                    .subjectAbbr(ta.getSubject().getSubjectAbbr()) // <--- Ora arriva dal DB
-                    .teacherId(ta.getEmployee() != null ? ta.getEmployee().getId() : null)
-                    .fullName(ta.getEmployee() != null && ta.getEmployee().getPerson() != null 
-                                ? ta.getEmployee().getPerson().getFullName() 
-                                : "Not Assigned")
+                    .subjectId(ta.getSubject() != null ? ta.getSubject().getId() : null)
+                    .subjectName(sName)
+                    .subjectAbbr(sAbbr)
+                    .teacherId(tId)
+                    .fullName(fName)
                     .isClassTeacher(ta.isClassTeacher())
-                    .isActive(ta.getEmployee() != null && ta.getEmployee().isEmployeeIsActive())
+                    .isActive(active)
                     .build();
             })
             .toList();
     }
+
 
 }

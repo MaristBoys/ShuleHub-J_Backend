@@ -61,9 +61,9 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
      * Utile per popolare il tab Staffing nel modale.
      */
     @Query("SELECT ta FROM TeacherAssignment ta " +
-           "JOIN FETCH ta.employee e " +
-           "JOIN FETCH e.person " +
-           "JOIN FETCH ta.subject s " +
+           "LEFT JOIN FETCH ta.employee e " +
+           "LEFT JOIN FETCH e.person " +
+           "LEFT JOIN FETCH ta.subject s " +
            "WHERE ta.yearRoom.id = :yearRoomId " +
            "AND ta.subject IS NOT NULL " +
            "ORDER BY s.subjectNameEng ASC")
