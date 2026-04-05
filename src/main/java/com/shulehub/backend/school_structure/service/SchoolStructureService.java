@@ -96,6 +96,13 @@ public class SchoolStructureService {
     }
 
 
+    @Transactional(readOnly = true)
+    public Room getRoomByNum(Short roomNum) {
+        return roomRepository.findByRoomNum(roomNum)
+                .orElseThrow(() -> new RuntimeException("Stanza fisica non trovata con numero: " + roomNum));
+    }
+
+
     /***************************************************************************************************
      FORM MANAGEMENT
      ****************************************************************************************************/

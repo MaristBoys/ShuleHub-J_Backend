@@ -68,16 +68,16 @@ public class SchoolConfigController {
     @GetMapping({"/rooms/{id}/details", "/rooms/details/preview"})
     public ResponseEntity<ApiResponse<YearRoomDetailDTO>> getYearRoomDetails(
             @PathVariable(required = false) Integer id,
-            @RequestParam(required = false) Short roomId,
+            @RequestParam(required = false) Short roomNum,
             @RequestParam(required = false) Short yearId
     ) {
         // Se non abbiamo né l'ID della configurazione né i parametri della ghost cell, lanciamo errore
-        if (id == null && (roomId == null || yearId == null)) {
-            throw new RuntimeException("Missing parameters: provide either yearRoomId or both roomId and yearId");
+        if (id == null && (roomNum == null || yearId == null)) {
+            throw new RuntimeException("Missing parameters: provide either yearRoomId or both roomNum and yearId");
         }
 
         // Chiamata al service unico che gestisce entrambi i casi
-        YearRoomDetailDTO details = schoolConfigService.getYearRoomDetails(id, roomId, yearId);
+        YearRoomDetailDTO details = schoolConfigService.getYearRoomDetails(id, roomNum, yearId);
         
         return ResponseEntity.ok(new ApiResponse<>(true, "Details retrieved", details));
     }

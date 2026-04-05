@@ -312,7 +312,7 @@ public class SchoolConfigService {
      * Gestisce sia stanze esistenti che "Ghost Cells" (nuove attivazioni).
      */
     @Transactional(readOnly = true)
-    public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId, Short roomId, Short yearId) {
+    public YearRoomDetailDTO getYearRoomDetails(Integer yearRoomId, Short roomNum, Short yearId) {
         
         YearRoomDetailDTO.SelectedScales currentScales;
         YearRoomDetailDTO.YearRoomDetailDTOBuilder dtoBuilder = YearRoomDetailDTO.builder();
@@ -355,7 +355,7 @@ public class SchoolConfigService {
         else {
             // --- CASO B: GHOST CELL (NUOVA STANZA) ---
             // Recuperiamo le entità di base per popolare l'header del modale
-            Room room = schoolStructureService.getRoomById(roomId);
+            Room room = schoolStructureService.getRoomByNum(roomNum); // CAMBIATO per cercare la stanza tramite numero
             Year year = schoolStructureService.getYearById(yearId);
 
             // LOGICA SMART DEFAULT:
@@ -364,7 +364,7 @@ public class SchoolConfigService {
             currentScales = indicatorScaleService.getSuggestedScalesByForm(room.getForm().getFormNum());
 
             dtoBuilder.yearRoomId(null)
-                      .roomId(roomId)
+                      .roomId(room.getId())
                       .roomName(room.getRoomName())
                       .formName(room.getForm().getFormName())
                       .yearName(year.getYearDescription())
