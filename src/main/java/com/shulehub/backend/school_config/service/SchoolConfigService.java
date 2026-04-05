@@ -17,7 +17,9 @@ import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 import com.shulehub.backend.indicator_scale.service.IndicatorScaleService;
 import com.shulehub.backend.school_structure.service.SchoolStructureService;
 import com.shulehub.backend.subject.service.SubjectService;
+
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
+import com.shulehub.backend.teacher_assignment.service.TeacherAssignmentService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,13 +47,14 @@ public class SchoolConfigService {
     
     // REPOSITORY ESTERNI (bisognorebbe passare dal service)
     private final YearRoomRepository yearRoomRepository;
-    private final RoomRepository roomRepository;
-    private final TeacherAssignmentRepository teacherAssignmentRepository; 
+    private final RoomRepository roomRepository; //passato al service
+    private final TeacherAssignmentRepository teacherAssignmentRepository; //passato al service
 
     // SERVICE ESTERNI (Orchestrazione)
     private final IndicatorScaleService indicatorScaleService;
     private final SchoolStructureService schoolStructureService;
     private final SubjectService subjectService;
+    private final TeacherAssignmentService teacherAssignmentService;
 
     /*************************************************************************************************** 
     Dati inseriti nella card di configurazione generale (Anni, Materie, Stanze attive)
@@ -218,7 +221,7 @@ public class SchoolConfigService {
                       .studentCount(statsView.getStudentCount())
                       .classTeacherName(statsView.getClassTeacherName())
                       .staffingRatio(statsView.getAssignedSubjects() + "/" + statsView.getTotalSubjects())
-                      .staffAssignments(getStaffAssignments(yearRoomId))
+                      .staffAssignments(teacherAssignmentService.getStaffAssignmentsForRoom(yearRoomId))
                       .enrolledStudents(getEnrolledStudents(yearRoomId));
         } 
         else {
@@ -249,7 +252,7 @@ public class SchoolConfigService {
     }
 
     // --- METODI PRIVATI DI SUPPORTO PER LA PULIZIA DEL CODICE ---
-
+/*
     private List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignments(Integer yearRoomId) {
         return teacherAssignmentRepository.findByYearRoomId(yearRoomId)
                 .stream()
@@ -283,6 +286,11 @@ public class SchoolConfigService {
                 })
                 .collect(Collectors.toList());
     }
+*/
+
+
+
+
 
     private List<YearRoomDetailDTO.StudentListItemDTO> getEnrolledStudents(Integer yearRoomId) {
         return yearRoomStudentRepository.findByYearRoomId(yearRoomId)
@@ -312,37 +320,6 @@ public class SchoolConfigService {
      * Metodo per assegnare una stanza a un anno (creazione YearRoom) con le scale di valutazione
      * Questo metodo coordina la creazione dell'entità YearRoom e l'assegnazione delle scale tramite IndicatorScaleService.
     */
-/*  @Transactional
-    public YearRoom assignRoom(Short roomNum, Short yearId, Boolean isActive, Map<String, Object> scaleData) {
-        // 1. Recuperiamo le entità fisiche tramite lo SchoolStructureService
-        Room room = schoolStructureService.getRoomByNum(roomNum);
-        Year year = schoolStructureService.getYearById(yearId);
-
-        // 2. Creiamo la nuova configurazione YearRoom
-        YearRoom yearRoom = new YearRoom();
-        yearRoom.setRoom(room);
-        yearRoom.setYear(year);
-        yearRoom.setYearRoomIsActive(isActive != null ? isActive : true);
-
-        // 3. Settiamo le scale usando i metodi che abbiamo già per l'update
-        // Nota: dobbiamo convertire i valori della mappa in Short
-        if (scaleData.containsKey("GRADE")) {
-            yearRoom.setGradeScale(indicatorScaleService.getScaleById(((Number) scaleData.get("GRADE")).shortValue()));
-        }
-        if (scaleData.containsKey("DIVISION")) {
-            yearRoom.setDivisionScale(indicatorScaleService.getScaleById(((Number) scaleData.get("DIVISION")).shortValue()));
-        }
-        if (scaleData.containsKey("CONDUCT_ALPHA")) {
-            yearRoom.setConductAlphaScale(indicatorScaleService.getScaleById(((Number) scaleData.get("CONDUCT_ALPHA")).shortValue()));
-        }
-        if (scaleData.containsKey("CONDUCT_TEXT")) {
-            yearRoom.setConductTextScale(indicatorScaleService.getScaleById(((Number) scaleData.get("CONDUCT_TEXT")).shortValue()));
-        }
-
-        // 4. Salviamo tramite il service della struttura che ha già il repository
-        return schoolStructureService.saveYearRoom(yearRoom);
-    }
-*/
     @Transactional
     public YearRoom assignRoom(Short roomNum, Short yearId, Boolean isActive, Map<String, Object> scaleData) {
         Room room = schoolStructureService.getRoomByNum(roomNum);
@@ -417,7 +394,7 @@ public class SchoolConfigService {
     
     /*************************************************************************************************** 
         ROOMS - costruzione modale di dettaglio per ciascuna room (YearRoomDetailDTO)
-        Tab Teachers - sezione per assegnare il docente alla stanza (da implementare) 
+        Tab Teachers - sezione per assegnare il docente ad una determiatata subject di una stanza (da implementare) 
     ****************************************************************************************************/
 
      /*************************************************************************************************** 

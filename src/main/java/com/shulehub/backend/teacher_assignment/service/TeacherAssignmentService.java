@@ -2,6 +2,7 @@ package com.shulehub.backend.teacher_assignment.service;
 
 import com.shulehub.backend.registry.model.entity.Employee;
 import com.shulehub.backend.registry.repository.EmployeeRepository;
+import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 import com.shulehub.backend.subject.model.entity.Subject;
@@ -10,6 +11,7 @@ import com.shulehub.backend.teacher_assignment.model.dto.ClassTeacherSelectionDT
 import com.shulehub.backend.teacher_assignment.model.dto.SubjectTeacherSelectionDTO;
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
+import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -115,4 +118,37 @@ public class TeacherAssignmentService {
         assignment.setEmployee(employee);
         assignmentRepository.save(assignment);
     }
+
+    public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
+    // Usiamo il metodo del repository che recupera tutto lo staffing
+    List<TeacherAssignment> assignments = assignmentRepository.findByYearRoomId(yearRoomId);
+
+        return assignments.stream()
+            .map(ta -> {
+                // Estraiamo i dati in variabili locali per chiarezza e per aiutare il compilatore
+                Short sId = (ta.getSubject() != null) ? ta.getSubject().getId() : null;
+                String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "No Subject";
+                String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "N/A";
+                
+                UUID tId = (ta.getEmployee() != null) ? ta.getEmployee().getId() : null;
+                String fName = (ta.getEmployee() != null && ta.getEmployee().getPerson() != null) 
+                                ? ta.getEmployee().getPerson().getFullName() 
+                                : "Not Assigned";
+                
+                boolean active = (ta.getEmployee() != null) && ta.getEmployee().isEmployeeIsActive();
+
+                // Costruiamo esplicitamente il DTO
+                return YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                    .subjectId(sId)
+                    .subjectName(sName)
+                    .subjectAbbr(sAbbr)
+                    .teacherId(tId)
+                    .fullName(fName)
+                    .isClassTeacher(ta.isClassTeacher())
+                    .isActive(active)
+                    .build();
+            })
+            .toList(); // Scorciatoia per .collect(Collectors.toList()) in Java 17+
+    }
+
 }

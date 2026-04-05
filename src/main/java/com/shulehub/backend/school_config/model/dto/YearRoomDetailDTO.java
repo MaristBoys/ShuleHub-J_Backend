@@ -1,7 +1,10 @@
 package com.shulehub.backend.school_config.model.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,9 +56,12 @@ public class YearRoomDetailDTO {
 
     @Data
     @Builder
+    @NoArgsConstructor  // Aggiungi questo
+    @AllArgsConstructor // Aggiungi questo
     public static class StaffAssignmentInfo {
         private Short subjectId;
         private String subjectName;
+        private String subjectAbbr;
         private UUID teacherId;
         private String fullName;      // Da Person.fullName
         private boolean isClassTeacher;
