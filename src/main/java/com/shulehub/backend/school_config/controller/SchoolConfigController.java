@@ -99,18 +99,33 @@ public class SchoolConfigController {
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
     @PostMapping("/rooms/assign")
     public ResponseEntity<ApiResponse<YearRoom>> assignRoom(@RequestBody Map<String, Object> payload) {
-        // Estraiamo i dati dalla mappa (gestendo i cast visto che JS manda numeri/stringhe)
-        Short roomNum = ((Number) payload.get("roomNum")).shortValue();
-        Short yearId = ((Number) payload.get("yearId")).shortValue();
-        Boolean isActive = (Boolean) payload.get("isActive");
-        
-        // Passiamo il resto della mappa (le scale) al service
-        YearRoom newConfig = schoolConfigService.assignRoom(roomNum, yearId, isActive, payload);
-        
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(true, "Room activated successfully", newConfig));
-    }
+        try {
+            // Estrazione sicura: convertiamo in stringa e poi in Short
+            // Questo funziona sia se il JS manda un numero che se manda una stringa
+            Short roomNum = payload.get("roomNum") != null 
+                ? Short.valueOf(payload.get("roomNum").toString()) 
+                : null;
+                
+            Short yearId = payload.get("yearId") != null 
+                ? Short.valueOf(payload.get("yearId").toString()) 
+                : null;
+                
+            Boolean isActive = payload.get("isActive") != null 
+                ? Boolean.valueOf(payload.get("isActive").toString()) 
+                : false;
 
+            if (roomNum == null || yearId == null) {
+                throw new RuntimeException("Parametri obbligatori mancanti");
+            }
+
+            YearRoom newConfig = schoolConfigService.assignRoom(roomNum, yearId, isActive, payload);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(true, "Room activated successfully", newConfig));
+        } catch (Exception e) {
+            e.printStackTrace(); // Fondamentale per vedere l'errore nei log di Render
+            throw new RuntimeException("Errore durante l'attivazione: " + e.getMessage());
+        }
+    }
 
 
 

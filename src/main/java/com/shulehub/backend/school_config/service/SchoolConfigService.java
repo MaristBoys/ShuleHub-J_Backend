@@ -312,7 +312,7 @@ public class SchoolConfigService {
      * Metodo per assegnare una stanza a un anno (creazione YearRoom) con le scale di valutazione
      * Questo metodo coordina la creazione dell'entità YearRoom e l'assegnazione delle scale tramite IndicatorScaleService.
     */
-    @Transactional
+/*  @Transactional
     public YearRoom assignRoom(Short roomNum, Short yearId, Boolean isActive, Map<String, Object> scaleData) {
         // 1. Recuperiamo le entità fisiche tramite lo SchoolStructureService
         Room room = schoolStructureService.getRoomByNum(roomNum);
@@ -342,8 +342,41 @@ public class SchoolConfigService {
         // 4. Salviamo tramite il service della struttura che ha già il repository
         return schoolStructureService.saveYearRoom(yearRoom);
     }
+*/
+    @Transactional
+    public YearRoom assignRoom(Short roomNum, Short yearId, Boolean isActive, Map<String, Object> scaleData) {
+        Room room = schoolStructureService.getRoomByNum(roomNum);
+        Year year = schoolStructureService.getYearById(yearId);
 
+        YearRoom yearRoom = new YearRoom();
+        yearRoom.setRoom(room);
+        yearRoom.setYear(year);
+        yearRoom.setYearRoomIsActive(isActive);
 
+        // Conversione sicura per ogni scala
+        if (scaleData.get("GRADE") != null) {
+            yearRoom.setGradeScale(indicatorScaleService.getScaleById(
+                Short.valueOf(scaleData.get("GRADE").toString())
+            ));
+        }
+        if (scaleData.get("DIVISION") != null) {
+            yearRoom.setDivisionScale(indicatorScaleService.getScaleById(
+                Short.valueOf(scaleData.get("DIVISION").toString())
+            ));
+        }
+        if (scaleData.get("CONDUCT_ALPHA") != null) {
+            yearRoom.setConductAlphaScale(indicatorScaleService.getScaleById(
+                Short.valueOf(scaleData.get("CONDUCT_ALPHA").toString())
+            ));
+        }
+        if (scaleData.get("CONDUCT_TEXT") != null) {
+            yearRoom.setConductTextScale(indicatorScaleService.getScaleById(
+                Short.valueOf(scaleData.get("CONDUCT_TEXT").toString())
+            ));
+        }
+
+        return schoolStructureService.saveYearRoom(yearRoom);
+    }
 
     /**
      * Aggiorna le scale di valutazione per una stanza.
