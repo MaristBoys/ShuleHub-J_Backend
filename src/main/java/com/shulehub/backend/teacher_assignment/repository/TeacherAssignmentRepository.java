@@ -91,24 +91,40 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
     /**
      * Verifica se esistono voti accademici nella tabella 'marks'.
      * Utilizziamo una query SQL nativa (nativeQuery = true) perchè non stiamo mappando una entità specifica,
-     * ma solo verificando l'esistenza di record.
-     */
-    @Query(value = "SELECT EXISTS (SELECT 1 FROM marks WHERE id_subject = :subjectId AND id_year = :yearId)", 
-        nativeQuery = true)
-    boolean hasPhysicalMarks(@Param("subjectId") Short subjectId, @Param("yearId") Short yearId);
-
-    /**
-     * Verifica se esistono voti di condotta nella tabella 'conduct_marks'.
-     * Dobbiamo collegare i voti agli studenti della specifica stanza (id_yearroom).
-     * Nello schema: conduct_marks.id_student -> students.id
+     * ma solo verificando l'esistenza di almeno un record.
      */
     @Query(value = "SELECT EXISTS (" +
-                "  SELECT 1 FROM conduct_marks cm " +
-                "  JOIN students s ON cm.id_student = s.id_person" +
-                "  WHERE s.id_yearroom = :yearRoomId AND cm.id_year = :yearId" +
-                ")", 
-        nativeQuery = true)
-    boolean hasConductMarks(@Param("yearRoomId") Integer yearRoomId, @Param("yearId") Short yearId);
+               "  SELECT 1 FROM marks m " +
+               "  JOIN cfg_yearroom_student cys ON m.id_student = cys.id_student " +
+               "  WHERE cys.id_yearroom = :yearRoomId " +
+               "  AND m.id_subject = :subjectId " +
+               "  AND m.id_year = :yearId" +
+               ")", 
+       nativeQuery = true)
+    boolean hasPhysicalMarks(
+        @Param("subjectId") Short subjectId, 
+        @Param("yearRoomId") Integer yearRoomId, // Aggiunto parametro
+        @Param("yearId") Short yearId
+    );
+
+
+
+    /**
+     * Verifica se esistono voti di condotta nella tabella 'conduct_marks'per gli studenti di una specifica stanza.
+     * Dobbiamo collegare i voti agli studenti della specifica stanza (id_yearroom).
+     * Nello schema: conduct_marks.id_student -> students.id
+     */ 
+    @Query(value = "SELECT EXISTS (" +
+                   "  SELECT 1 FROM conduct_marks cm " +
+                   "  JOIN cfg_yearroom_student cys ON cm.id_student = cys.id_student " +
+                   "  WHERE cys.id_yearroom = :yearRoomId " +
+                   "  AND cm.id_year = :yearId" +
+                   ")", 
+           nativeQuery = true)
+    boolean hasConductMarks(
+        @Param("yearRoomId") Integer yearRoomId, 
+        @Param("yearId") Short yearId
+    );
 
     /**
      * Recupera gli ID delle materie già assegnate a una YearRoom.

@@ -158,21 +158,28 @@ public class TeacherAssignmentService {
         assignmentRepository.save(assignment);
     }
 
+ 
+
+    /**
+     * Recupera tutte le assegnazioni (Staffing) per una stanza, mappate in DTO.
+     * Utilizza il nuovo metodo del repository che fa già il LEFT JOIN per avere tutte le info necessarie.
+     */
     public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
         List<TeacherAssignment> assignments = assignmentRepository.findStaffingByYearRoomId(yearRoomId);
 
         return assignments.stream()
             .map(ta -> {
-                // Estraiamo l'ID del subject in sicurezza
                 Short sId = (ta.getSubject() != null) ? ta.getSubject().getId() : null;
+                Short yId = ta.getYearRoom().getYear().getId();
                 
+                // Fallback nomi
                 String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "Class Coordination";
                 String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "CC";
                 
+                // Info Docente
                 UUID tId = (ta.getEmployee() != null) ? ta.getEmployee().getId() : null;
                 String fName = "Not Assigned";
                 boolean active = false;
-                
                 if (ta.getEmployee() != null) {
                     active = ta.getEmployee().isEmployeeIsActive();
                     if (ta.getEmployee().getPerson() != null) {
@@ -180,17 +187,15 @@ public class TeacherAssignmentService {
                     }
                 }
 
-                // --- PROTEZIONE DAI NULL PER I VOTI ---
+                // LOGICA FILTRO VOTI (Sincronizzata con i nuovi parametri Repository)
                 boolean hasMarks = false;
-                
-                // Se c'è un subject (Materia), controlliamo i voti fisici e condotta
                 if (sId != null) {
-                    hasMarks = assignmentRepository.hasPhysicalMarks(sId, ta.getYearRoom().getYear().getId()) || 
-                            assignmentRepository.hasConductMarks(ta.getYearRoom().getId(), ta.getYearRoom().getYear().getId());
-                } 
-                // Se non c'è subject ma è Class Teacher, controlliamo solo la condotta
-                else if (ta.isClassTeacher()) {
-                    hasMarks = assignmentRepository.hasConductMarks(ta.getYearRoom().getId(), ta.getYearRoom().getYear().getId());
+                    // Per le materie: check voti materia OR check condotta (se la materia è legata alla condotta)
+                    hasMarks = assignmentRepository.hasPhysicalMarks(sId, yearRoomId, yId) || 
+                            assignmentRepository.hasConductMarks(yearRoomId, yId);
+                } else if (ta.isClassTeacher()) {
+                    // Per il Class Teacher: check solo condotta
+                    hasMarks = assignmentRepository.hasConductMarks(yearRoomId, yId);
                 }
 
                 return YearRoomDetailDTO.StaffAssignmentInfo.builder()
