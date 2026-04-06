@@ -163,15 +163,14 @@ public class TeacherAssignmentService {
 
         return assignments.stream()
             .map(ta -> {
-                // Subject è garantito dal filtro IS NOT NULL nella query, 
-                // ma mettiamo comunque dei fallback di sicurezza
-                String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "Unknown Subject";
-                String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "??";
+                // Estraiamo l'ID del subject in sicurezza
+                Short sId = (ta.getSubject() != null) ? ta.getSubject().getId() : null;
                 
-                // Gestione Employee e Person (che ora possono essere NULL)
+                String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "Class Coordination";
+                String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "CC";
+                
                 UUID tId = (ta.getEmployee() != null) ? ta.getEmployee().getId() : null;
-                
-                String fName = "Not Assigned"; // Default
+                String fName = "Not Assigned";
                 boolean active = false;
                 
                 if (ta.getEmployee() != null) {
@@ -181,17 +180,21 @@ public class TeacherAssignmentService {
                     }
                 }
 
-                // Verifichiamo se questa specifica assegnazione ha voti
-                boolean hasMarks = assignmentRepository.hasPhysicalMarks(
-                    ta.getSubject().getId(), 
-                    ta.getYearRoom().getYear().getId()
-                ) || assignmentRepository.hasConductMarks(
-                    ta.getYearRoom().getId(), 
-                    ta.getYearRoom().getYear().getId()
-                );
+                // --- PROTEZIONE DAI NULL PER I VOTI ---
+                boolean hasMarks = false;
+                
+                // Se c'è un subject (Materia), controlliamo i voti fisici e condotta
+                if (sId != null) {
+                    hasMarks = assignmentRepository.hasPhysicalMarks(sId, ta.getYearRoom().getYear().getId()) || 
+                            assignmentRepository.hasConductMarks(ta.getYearRoom().getId(), ta.getYearRoom().getYear().getId());
+                } 
+                // Se non c'è subject ma è Class Teacher, controlliamo solo la condotta
+                else if (ta.isClassTeacher()) {
+                    hasMarks = assignmentRepository.hasConductMarks(ta.getYearRoom().getId(), ta.getYearRoom().getYear().getId());
+                }
 
                 return YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                    .subjectId(ta.getSubject() != null ? ta.getSubject().getId() : null)
+                    .subjectId(sId)
                     .subjectName(sName)
                     .subjectAbbr(sAbbr)
                     .teacherId(tId)

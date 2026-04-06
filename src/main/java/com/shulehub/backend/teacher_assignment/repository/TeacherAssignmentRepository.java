@@ -104,7 +104,7 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
      */
     @Query(value = "SELECT EXISTS (" +
                 "  SELECT 1 FROM conduct_marks cm " +
-                "  JOIN students s ON cm.id_student = s.id " +
+                "  JOIN students s ON cm.id_student = s.id_person" +
                 "  WHERE s.id_yearroom = :yearRoomId AND cm.id_year = :yearId" +
                 ")", 
         nativeQuery = true)
