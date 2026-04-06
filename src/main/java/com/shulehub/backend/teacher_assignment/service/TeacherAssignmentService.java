@@ -280,7 +280,7 @@ public class TeacherAssignmentService {
         Integer yearRoomId = ta.getYearRoom().getId();
 
         // Eseguiamo il controllo incrociato
-        boolean hasData = assignmentRepository.hasPhysicalMarks(subjectId, yearId) || 
+        boolean hasData = assignmentRepository.hasPhysicalMarks(subjectId, yearRoomId, yearId) || 
                         assignmentRepository.hasConductMarks(yearRoomId, yearId);
 
         if (hasData) {
