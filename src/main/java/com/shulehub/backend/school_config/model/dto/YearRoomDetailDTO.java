@@ -65,7 +65,10 @@ public class YearRoomDetailDTO {
         private UUID teacherId;
         private String fullName;      // Da Person.fullName
         private boolean isClassTeacher;
-        private boolean isActive;     // Da Employee.employeeIsActive
+        private boolean isTeacherActive;     // Da Employee.employeeIsActive per lo stato del docente
+        private boolean isAssignmentActive; // per lo stato del record di assegnazione (cfg_yearroom_subject_teacher.is_active)
+        private boolean hasStoredMarks; // Indica se ci sono voti accademici associati a questa materia in questa stanza, utile per la logica di disattivazione o cancellazione.
+    
     }
 
     @Data

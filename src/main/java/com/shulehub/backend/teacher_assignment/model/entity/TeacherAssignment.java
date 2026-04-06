@@ -43,4 +43,7 @@ public class TeacherAssignment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_employee", referencedColumnName = "id_person")
     private Employee employee;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true; // Default a true
 }

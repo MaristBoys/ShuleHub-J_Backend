@@ -61,13 +61,16 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
      * Utile per popolare il tab Staffing nel modale.
      */
     @Query("SELECT ta FROM TeacherAssignment ta " +
-           "LEFT JOIN FETCH ta.employee e " +
-           "LEFT JOIN FETCH e.person " +
-           "LEFT JOIN FETCH ta.subject s " +
-           "WHERE ta.yearRoom.id = :yearRoomId " +
-           "AND ta.subject IS NOT NULL " +
-           "ORDER BY s.subjectNameEng ASC")
+        "LEFT JOIN FETCH ta.subject s " +   // LEFT JOIN per vedere la materia anche senza docente
+        "LEFT JOIN FETCH ta.employee e " +  // LEFT JOIN per vedere il record anche se id_employee è NULL
+        "LEFT JOIN FETCH e.person p " +
+        "WHERE ta.yearRoom.id = :yearRoomId " +
+        "AND ta.subject IS NOT NULL " +     // Escludiamo il Class Teacher
+        "ORDER BY s.subjectNameEng ASC")
     List<TeacherAssignment> findStaffingByYearRoomId(@Param("yearRoomId") Integer yearRoomId);
+
+
+
 
     /**
      * Trova un'assegnazione specifica per materia.
@@ -80,6 +83,42 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
      * nello stesso anno scolastico (evita sovrapposizioni).
      */
     boolean existsByEmployeeIdAndYearRoomYearIdAndClassTeacherTrue(UUID employeeId, Short yearId);
+
+
+    // Metodi per verificare l'esistenza di voti (marks) associati a una materia o a una stanza, 
+    // utili per la logica di disattivazione o cancellazione della configurazione cfg_yearroom_subject_teacher.
+
+    /**
+     * Verifica se esistono voti accademici nella tabella 'marks'.
+     * Utilizziamo una query SQL nativa (nativeQuery = true) perchè non stiamo mappando una entità specifica,
+     * ma solo verificando l'esistenza di record.
+     */
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM marks WHERE id_subject = :subjectId AND id_year = :yearId)", 
+        nativeQuery = true)
+    boolean hasPhysicalMarks(@Param("subjectId") Short subjectId, @Param("yearId") Short yearId);
+
+    /**
+     * Verifica se esistono voti di condotta nella tabella 'conduct_marks'.
+     * Dobbiamo collegare i voti agli studenti della specifica stanza (id_yearroom).
+     * Nello schema: conduct_marks.id_student -> students.id
+     */
+    @Query(value = "SELECT EXISTS (" +
+                "  SELECT 1 FROM conduct_marks cm " +
+                "  JOIN students s ON cm.id_student = s.id " +
+                "  WHERE s.id_yearroom = :yearRoomId AND cm.id_year = :yearId" +
+                ")", 
+        nativeQuery = true)
+    boolean hasConductMarks(@Param("yearRoomId") Integer yearRoomId, @Param("yearId") Short yearId);
+
+    /**
+     * Recupera gli ID delle materie già assegnate a una YearRoom.
+     * Utile per disabilitare le opzioni già assegnate nel dropdown del frontend.
+     */
+    @Query("SELECT ta.subject.id FROM TeacherAssignment ta " +
+        "WHERE ta.yearRoom.id = :yearRoomId " +
+        "AND ta.subject IS NOT NULL")
+    List<Short> findAssignedSubjectIds(@Param("yearRoomId") Integer yearRoomId);
+
 
 }
 

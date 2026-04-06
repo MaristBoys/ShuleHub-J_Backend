@@ -7,6 +7,7 @@ import com.shulehub.backend.school_structure.model.entity.YearRoom;
 import com.shulehub.backend.school_structure.repository.YearRoomRepository;
 import com.shulehub.backend.subject.model.entity.Subject;
 import com.shulehub.backend.subject.repository.SubjectRepository;
+import com.shulehub.backend.teacher_assignment.controller.TeacherAssignmentController.SmartCopyRequest;
 import com.shulehub.backend.teacher_assignment.model.dto.ClassTeacherSelectionDTO;
 import com.shulehub.backend.teacher_assignment.model.dto.SubjectTeacherSelectionDTO;
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
@@ -93,7 +94,7 @@ public class TeacherAssignmentService {
     /**
      * Assegna un docente a una specifica materia (Staffing).
      */
-    @Transactional
+/*    @Transactional
     public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
@@ -118,39 +119,44 @@ public class TeacherAssignmentService {
         assignment.setEmployee(employee);
         assignmentRepository.save(assignment);
     }
-/*
-    public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
-    // Usiamo il metodo del repository che recupera tutto lo staffing
-    List<TeacherAssignment> assignments = assignmentRepository.findByYearRoomId(yearRoomId);
-
-        return assignments.stream()
-            .map(ta -> {
-                // Estraiamo i dati in variabili locali per chiarezza e per aiutare il compilatore
-                Short sId = (ta.getSubject() != null) ? ta.getSubject().getId() : null;
-                String sName = (ta.getSubject() != null) ? ta.getSubject().getSubjectNameEng() : "No Subject";
-                String sAbbr = (ta.getSubject() != null) ? ta.getSubject().getSubjectAbbr() : "N/A";
-                
-                UUID tId = (ta.getEmployee() != null) ? ta.getEmployee().getId() : null;
-                String fName = (ta.getEmployee() != null && ta.getEmployee().getPerson() != null) 
-                                ? ta.getEmployee().getPerson().getFullName() 
-                                : "Not Assigned";
-                
-                boolean active = (ta.getEmployee() != null) && ta.getEmployee().isEmployeeIsActive();
-
-                // Costruiamo esplicitamente il DTO
-                return YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                    .subjectId(sId)
-                    .subjectName(sName)
-                    .subjectAbbr(sAbbr)
-                    .teacherId(tId)
-                    .fullName(fName)
-                    .isClassTeacher(ta.isClassTeacher())
-                    .isActive(active)
-                    .build();
-            })
-            .toList(); // Scorciatoia per .collect(Collectors.toList()) in Java 17+
-    }
 */
+
+    @Transactional
+    public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
+        // 1. Validazione preventiva: subjectId non può essere null qui
+        if (subjectId == null) {
+            throw new RuntimeException("subjectId obbligatorio per l'assegnazione dello Staffing");
+        }
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        
+        // 2. Cerchiamo l'assegnazione esistente (anche se isActive = false)
+        TeacherAssignment assignment = assignmentRepository
+                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
+                .orElseGet(() -> {
+                    // Se non esiste, creiamo un nuovo record configurando le relazioni obbligatorie
+                    YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
+                            .orElseThrow(() -> new RuntimeException("YearRoom not found"));
+                    Subject subject = subjectRepository.findById(subjectId)
+                            .orElseThrow(() -> new RuntimeException("Subject not found"));
+                    
+                    TeacherAssignment newTa = new TeacherAssignment();
+                    newTa.setYearRoom(yearRoom);
+                    newTa.setSubject(subject);
+                    newTa.setClassTeacher(false); // Sicurezza: non è un class teacher
+                    return newTa;
+                });
+
+        // 3. Aggiorniamo il docente
+        assignment.setEmployee(employee);
+
+        // 4. LOGICA CRITICA: Se la materia era disattivata, la riattiviamo
+        // Questo permette di "recuperare" una materia archiviata semplicemente riassegnando un docente
+        assignment.setActive(true);
+
+        assignmentRepository.save(assignment);
+    }
 
     public List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignmentsForRoom(Integer yearRoomId) {
         List<TeacherAssignment> assignments = assignmentRepository.findStaffingByYearRoomId(yearRoomId);
@@ -175,6 +181,15 @@ public class TeacherAssignmentService {
                     }
                 }
 
+                // Verifichiamo se questa specifica assegnazione ha voti
+                boolean hasMarks = assignmentRepository.hasPhysicalMarks(
+                    ta.getSubject().getId(), 
+                    ta.getYearRoom().getYear().getId()
+                ) || assignmentRepository.hasConductMarks(
+                    ta.getYearRoom().getId(), 
+                    ta.getYearRoom().getYear().getId()
+                );
+
                 return YearRoomDetailDTO.StaffAssignmentInfo.builder()
                     .subjectId(ta.getSubject() != null ? ta.getSubject().getId() : null)
                     .subjectName(sName)
@@ -182,11 +197,185 @@ public class TeacherAssignmentService {
                     .teacherId(tId)
                     .fullName(fName)
                     .isClassTeacher(ta.isClassTeacher())
-                    .isActive(active)
+                    .isTeacherActive(active)
+                    .isAssignmentActive(ta.isActive())
+                    .hasStoredMarks(hasMarks)
                     .build();
             })
             .toList();
     }
 
+    /**
+     * Recupera le materie che possono essere aggiunte alla stanza.
+     * Esclude quelle già presenti (anche se disattivate) e include solo quelle attive nel sistema.
+     */
+    @Transactional(readOnly = true)
+    public List<Subject> getAvailableSubjectsForRoom(Integer yearRoomId) {
+        // 1. Recuperiamo tutte le materie attive dal sistema (dal SubjectRepository)
+        List<Subject> allActiveSubjects = subjectRepository.findBySubjectIsActiveTrueOrderBySubjectNameEngAsc();
+        
+        // 2. Recuperiamo gli ID di quelle già assegnate a questa stanza
+        List<Short> assignedIds = assignmentRepository.findAssignedSubjectIds(yearRoomId);
+        
+        // 3. Filtriamo la lista escludendo le già presenti
+        return allActiveSubjects.stream()
+                .filter(s -> !assignedIds.contains(s.getId()))
+                .toList();
+    }
+
+    /**
+     * Aggiunge una nuova materia a una YearRoom (senza docente iniziale).
+     */
+    @Transactional
+    public void addSubjectToRoom(Integer yearRoomId, Short subjectId) {
+        // Verifica di sicurezza contro i duplicati
+        if (assignmentRepository.findByYearRoomIdAndSubjectId(yearRoomId, subjectId).isPresent()) {
+            throw new RuntimeException("Questa materia è già configurata per questa stanza.");
+        }
+
+        YearRoom yr = yearRoomRepository.findById(yearRoomId)
+                .orElseThrow(() -> new RuntimeException("YearRoom non trovata"));
+                
+        Subject sub = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Materia non trovata"));
+
+        TeacherAssignment ta = new TeacherAssignment();
+        ta.setYearRoom(yr);
+        ta.setSubject(sub);
+        ta.setEmployee(null); // Inizialmente vacante
+        ta.setClassTeacher(false);
+        ta.setActive(true); // La nuova materia viene aggiunta come attiva
+
+        assignmentRepository.save(ta);
+    }
+
+
+
+    /**
+     * Rimuove un'assegnazione docente-materia (Staffing)
+     * Logica: Se ci sono voti associati, facciamo Soft Delete (isActive = false), altrimenti Hard Delete.
+     */
+    @Transactional
+    public boolean removeAssignment(Integer assignmentId) {
+        TeacherAssignment ta = assignmentRepository.findById(assignmentId)
+            .orElseThrow(() -> new RuntimeException("Assegnazione non trovata"));
+
+        // --- AGGIUNTA SICUREZZA ---
+        // Non permettiamo di rimuovere il Class Teacher da qui (ha un suo flusso dedicato)
+        if (ta.isClassTeacher()) {
+            throw new RuntimeException("Non puoi rimuovere il Class Teacher tramite questa funzione.");
+        }
+        
+        // Recuperiamo i dati necessari dalle relazioni già mappate
+        Short subjectId = ta.getSubject().getId();
+        Short yearId = ta.getYearRoom().getYear().getId();
+        Integer yearRoomId = ta.getYearRoom().getId();
+
+        // Eseguiamo il controllo incrociato
+        boolean hasData = assignmentRepository.hasPhysicalMarks(subjectId, yearId) || 
+                        assignmentRepository.hasConductMarks(yearRoomId, yearId);
+
+        if (hasData) {
+            // Se ci sono voti, facciamo Soft Delete
+            ta.setActive(false);
+            assignmentRepository.save(ta);
+            return true; // true = Soft Delete eseguito
+        } else {
+            // Se è un errore di inserimento senza dati, facciamo Hard Delete
+            assignmentRepository.delete(ta);
+            return false; // false = Hard Delete eseguito
+        }
+    }
+
+
+    /**
+     * Cambia lo stato di attivazione di un'assegnazione (Staffing).
+     * @param assignmentId l'ID della riga in cfg_yearroom_subject_teacher
+     * @param active il nuovo stato desiderato
+     */
+    @Transactional
+    public void toggleAssignmentStatus(Integer assignmentId, boolean active) {
+        TeacherAssignment ta = assignmentRepository.findById(assignmentId)
+            .orElseThrow(() -> new RuntimeException("Assegnazione non trovata"));
+
+        ta.setActive(active);
+        // Non serve chiamare save() esplicitamente se siamo in @Transactional, 
+        // ma lo mettiamo per chiarezza.
+        assignmentRepository.save(ta);
+    }
+
+
+
+
+
+    // GESTIONE SMART COPY DA ANNO PRECEDENTE
+
+    @Transactional
+    public void smartCopyFromPreviousYear(Integer targetYearRoomId, SmartCopyRequest request) {
+        YearRoom targetRoom = yearRoomRepository.findById(targetYearRoomId)
+                .orElseThrow(() -> new RuntimeException("Stanza di destinazione non trovata"));
+
+        YearRoom sourceRoom = yearRoomRepository.findByYearIdAndRoomId(request.previousYearId(), targetRoom.getRoom().getId())
+                .orElseThrow(() -> new RuntimeException("Nessuna stanza corrispondente trovata nell'anno sorgente"));
+
+        List<TeacherAssignment> sourceAssignments = assignmentRepository.findByYearRoomId(sourceRoom.getId());
+        List<Short> alreadyAssignedSubjectIds = assignmentRepository.findAssignedSubjectIds(targetYearRoomId);
+
+        for (TeacherAssignment sourceAt : sourceAssignments) {
+            
+            // --- CASO 1: CLASS TEACHER ---
+            if (sourceAt.isClassTeacher()) {
+                if (request.copyClassTeacher()) {
+                    // Verifichiamo se la stanza target ha già un coordinatore
+                    boolean alreadyHasClassTeacher = assignmentRepository
+                        .findByYearRoomIdAndSubjectIsNullAndClassTeacherTrue(targetYearRoomId).isPresent();
+                    
+                    if (!alreadyHasClassTeacher) {
+                        copyRecord(sourceAt, targetRoom, true); // true forza il tentativo di copia docente
+                    }
+                }
+                continue; 
+            }
+
+            // --- CASO 2: SUBJECTS (Staffing) ---
+            if (sourceAt.getSubject() != null) {
+                Short subjectId = sourceAt.getSubject().getId();
+                
+                // Salto se la materia esiste già nel target (Punto 2 user)
+                if (alreadyAssignedSubjectIds.contains(subjectId)) {
+                    continue;
+                }
+
+                copyRecord(sourceAt, targetRoom, request.copyTeachers());
+            }
+        }
+    }
+
+    /**
+     * Helper per la creazione del record. 
+     * Verifica che il docente sia attivo prima di procedere all'assegnazione.
+     */
+    private void copyRecord(TeacherAssignment source, YearRoom targetRoom, boolean shouldCopyTeacher) {
+        TeacherAssignment newAt = new TeacherAssignment();
+        newAt.setYearRoom(targetRoom);
+        newAt.setSubject(source.getSubject());
+        newAt.setClassTeacher(source.isClassTeacher());
+        newAt.setActive(true);
+
+        // Se l'utente ha chiesto di copiare il docente (per materia o per classe)
+        if (shouldCopyTeacher && source.getEmployee() != null) {
+            // VERIFICA ATTIVITÀ DOCENTE (Punto 3 e tua ultima nota)
+            if (source.getEmployee().isEmployeeIsActive()) {
+                newAt.setEmployee(source.getEmployee());
+            } else {
+                // Se il docente è inattivo, il record viene creato ma "Not Assigned"
+                newAt.setEmployee(null);
+            }
+        } else {
+            newAt.setEmployee(null);
+        }
+
+        assignmentRepository.save(newAt);
+    }
 
 }
