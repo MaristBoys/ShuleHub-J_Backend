@@ -312,12 +312,113 @@ public class TeacherAssignmentService {
         assignmentRepository.save(ta);
     }
 
+    // recupera le stanze idonee a essere sorgenti per la funzione di Smart Copy 
+    // (stesso Form, anno corrente o precedente, escludendo la stanza target)
+    public List<YearRoomDetailDTO> getEligibleSourceRooms(Integer targetYearRoomId) {
+    // 1. Recupero la stanza target
+    YearRoom target = yearRoomRepository.findById(targetYearRoomId)
+            .orElseThrow(() -> new RuntimeException("Target room not found"));
+    
+    Short currentYearId = target.getYear().getId();
+    Short previousYearId = (short) (currentYearId - 1);
+    Short formId = target.getRoom().getForm().getId();
+
+    // 2. Cerco le stanze dello stesso Form (Anno Corrente e Precedente)
+    // Nota: Ho aggiunto un filtro per assicurarmi di non suggerire stanze non ancora "attivate" 
+    // se la logica lo richiede, ma per ora teniamo tutte le YearRoom del form.
+    return yearRoomRepository.findAll().stream()
+            .filter(yr -> yr.getRoom().getForm().getId().equals(formId))
+            .filter(yr -> yr.getYear().getId().equals(currentYearId) || yr.getYear().getId().equals(previousYearId))
+            .filter(yr -> !yr.getId().equals(targetYearRoomId))
+            .map(yr -> {
+                // Se il costruttore YearRoomDetailDTO() continua a darti noie, 
+                // assicurati che la classe sia importata correttamente.
+                YearRoomDetailDTO dto = new YearRoomDetailDTO();
+                dto.setYearRoomId(yr.getId());
+                
+                // Formattiamo il nome per renderlo chiaro nel dropdown: "1A (2023/2024)"
+                String yearName = yr.getYear().toString(); // Assumendo che Year abbia un toString ben formattato
+                String roomName = yr.getRoom().getRoomName();
+                dto.setRoomName(roomName + " (" + yearName + ")");
+                
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /* effettua la copia massiva della configurazione da una stanza sorgente a una stanza target,
+    con la logica guidata dai parametri ricevuti nella SmartCopyRequest
+     */
+    @Transactional
+    public void smartCopyFromRoom(Integer targetYearRoomId, SmartCopyRequest request) {
+        YearRoom targetRoom = yearRoomRepository.findById(targetYearRoomId)
+                .orElseThrow(() -> new RuntimeException("Target room not found"));
+
+        // 1. Recupero le assegnazioni della stanza SORGENTE
+        List<TeacherAssignment> sourceAssignments = assignmentRepository.findByYearRoomId(request.sourceYearRoomId());
+        
+        // 2. Recupero cosa c'è già nel target per evitare duplicati
+        List<Short> alreadyAssignedSubjectIds = assignmentRepository.findByYearRoomId(targetYearRoomId)
+                .stream()
+                .map(at -> at.getSubject().getId())
+                .toList();
+
+        for (TeacherAssignment sourceAt : sourceAssignments) {
+            // 1. FILTRO MATERIE ATTIVE (NEW): 
+            // Se la materia di origine è disattivata nel catalogo generale, la saltiamo.
+            if (sourceAt.getSubject() != null && !sourceAt.getSubject().isSubjectIsActive()) {
+                continue; 
+            }
+            
+            // 2. Se è un Class Teacher e l'utente NON ha spuntato "Include Class Teacher", salto
+            if (sourceAt.isClassTeacher() && !request.copyClassTeacher()) {
+                continue; 
+            }
+            
+
+            // 3. Evitiamo duplicati (ma vengono prese tutte)
+            Short subjectId = sourceAt.getSubject().getId();
+            if (subjectId != null && alreadyAssignedSubjectIds.contains(subjectId)) {
+                continue;
+    }
+            // 4. Eseguo la copia usando l'helper 
+            copyRecord(sourceAt, targetRoom, request);
+        }
+    }
+
+    private void copyRecord(TeacherAssignment source, YearRoom targetRoom, SmartCopyRequest request) {
+        TeacherAssignment newAt = new TeacherAssignment();
+        
+        newAt.setYearRoom(targetRoom);
+        newAt.setSubject(source.getSubject());
+        newAt.setClassTeacher(source.isClassTeacher());
+        newAt.setActive(true);
+
+        // Determiniamo se dobbiamo tentare di copiare il docente
+        // Se è CT, guardiamo request.copyClassTeacher(). Se è materia, request.copyTeachers().
+        boolean shouldAttemptTeacherCopy = source.isClassTeacher() ? 
+                                        request.copyClassTeacher() : 
+                                        request.copyTeachers();
+
+        if (shouldAttemptTeacherCopy && source.getEmployee() != null) {
+            // Verifica se il docente è ancora attivo (usando il tuo metodo isEmployeeIsActive)
+            if (Boolean.TRUE.equals(source.getEmployee().isEmployeeIsActive())) {
+                newAt.setEmployee(source.getEmployee());
+            } else {
+                newAt.setEmployee(null); // Docente rimosso/inattivo -> "Not Assigned"
+            }
+        } else {
+            newAt.setEmployee(null);
+        }
+
+        assignmentRepository.save(newAt);
+    }
 
 
 
 
     // GESTIONE SMART COPY DA ANNO PRECEDENTE
-
+/*
     @Transactional
     public void smartCopyFromPreviousYear(Integer targetYearRoomId, SmartCopyRequest request) {
         YearRoom targetRoom = yearRoomRepository.findById(targetYearRoomId)
@@ -358,12 +459,12 @@ public class TeacherAssignmentService {
             }
         }
     }
-
+*/
     /**
      * Helper per la creazione del record. 
      * Verifica che il docente sia attivo prima di procedere all'assegnazione.
      */
-    private void copyRecord(TeacherAssignment source, YearRoom targetRoom, boolean shouldCopyTeacher) {
+/*    private void copyRecord(TeacherAssignment source, YearRoom targetRoom, boolean shouldCopyTeacher) {
         TeacherAssignment newAt = new TeacherAssignment();
         newAt.setYearRoom(targetRoom);
         newAt.setSubject(source.getSubject());
@@ -385,5 +486,5 @@ public class TeacherAssignmentService {
 
         assignmentRepository.save(newAt);
     }
-
+*/
 }

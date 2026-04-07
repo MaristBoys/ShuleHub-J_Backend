@@ -1,6 +1,7 @@
 package com.shulehub.backend.teacher_assignment.controller;
 
 import com.shulehub.backend.common.response.ApiResponse;
+import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 import com.shulehub.backend.subject.model.entity.Subject;
 import com.shulehub.backend.teacher_assignment.model.dto.ClassTeacherSelectionDTO;
 import com.shulehub.backend.teacher_assignment.model.dto.SubjectTeacherSelectionDTO;
@@ -140,7 +141,7 @@ public class TeacherAssignmentController {
     // Questo record serve a mappare i dati inviati dal frontend durante l'operazione di "Smart Copy". 
     // Lo abbiamo aggiunto per trasportare in un unico oggetto i parametri che guidano la logica di clonazione.
     public record SmartCopyRequest(
-        Short previousYearId, 
+        Integer sourceYearRoomId, // Cambiato da Short previousYearId
         boolean copyTeachers, 
         boolean copyClassTeacher
     ) {}
@@ -149,7 +150,7 @@ public class TeacherAssignmentController {
     /**
      * Esegue la copia massiva della configurazione da un anno precedente.
      */
-    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
+/*    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
     @PostMapping("/year-rooms/{yearRoomId}/smart-copy")
     public ResponseEntity<ApiResponse<Void>> smartCopy(
             @PathVariable Integer yearRoomId,
@@ -157,6 +158,16 @@ public class TeacherAssignmentController {
         
         assignmentService.smartCopyFromPreviousYear(yearRoomId, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Configurazione copiata con successo", null));
+    }
+*/
+    // In TeacherAssignmentController.java
+
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOM')")
+    @GetMapping("/year-rooms/{yearRoomId}/eligible-sources")
+    public ResponseEntity<ApiResponse<List<YearRoomDetailDTO>>> getEligibleSourceRooms(
+            @PathVariable Integer yearRoomId) {
+        List<YearRoomDetailDTO> sources = assignmentService.getEligibleSourceRooms(yearRoomId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Source rooms retrieved", sources));
     }
 
 

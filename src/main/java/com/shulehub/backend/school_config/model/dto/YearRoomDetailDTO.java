@@ -12,6 +12,8 @@ import java.util.UUID;
 import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO.SelectedScales;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class YearRoomDetailDTO {
     // 1. DATI IDENTIFICATIVI & HEADER
