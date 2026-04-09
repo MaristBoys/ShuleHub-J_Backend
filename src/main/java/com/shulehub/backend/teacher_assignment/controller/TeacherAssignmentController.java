@@ -58,16 +58,19 @@ public class TeacherAssignmentController {
 
     /**
      * Assegna un docente a una materia specifica (Staffing) in una YearRoom.
+     * Cambiamo da PUT a PATCH per coerenza con il Class Teacher e per evitare blocchi firewall/security.
      */
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
-    @PutMapping("/year-rooms/{yearRoomId}/subjects/{subjectId}")
+    @PatchMapping("/year-rooms/{yearRoomId}/subjects/{subjectId}") // Passato a PATCH
     public ResponseEntity<ApiResponse<Void>> assignSubjectTeacher(
             @PathVariable Integer yearRoomId,
             @PathVariable Short subjectId,
             @RequestBody TeacherSelectionRequest request) {
         
+        // Passiamo l'employeeId (che può essere null per l'unassign) al service
         assignmentService.assignSubjectTeacher(yearRoomId, subjectId, request.employeeId());
-        return ResponseEntity.ok(new ApiResponse<>(true, "Docente assegnato alla materia con successo", null));
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "Staff assignment updated successfully", null));
     }
 
     /**

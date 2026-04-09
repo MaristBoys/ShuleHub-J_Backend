@@ -96,42 +96,32 @@ public class TeacherAssignmentService {
      */
 /*    @Transactional
     public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
-        YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
-                .orElseThrow(() -> new RuntimeException("YearRoom not found"));
-                
-        Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-        // Cerchiamo se esiste già un'assegnazione per questa materia in questa stanza
-        TeacherAssignment assignment = assignmentRepository
-                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
-                .orElse(new TeacherAssignment());
-
-        if (assignment.getId() == null) {
-            assignment.setYearRoom(yearRoom);
-            assignment.setSubject(subject);
-            assignment.setClassTeacher(false);
-        }
-
-        assignment.setEmployee(employee);
-        assignmentRepository.save(assignment);
-    }
-*/
-
-    @Transactional
-    public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
         // 1. Validazione preventiva: subjectId non può essere null qui
         if (subjectId == null) {
             throw new RuntimeException("subjectId obbligatorio per l'assegnazione dello Staffing");
         }
 
+
+        // 1. Recupera l'assegnazione esistente
+        Optional<TeacherAssignment> existingOpt = assignmentRepository
+                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId);
+
+        // 2. Gestione Unassign (Fondamentale!)
+        if (employeeId == null) {
+            existingOpt.ifPresent(assignment -> {
+                assignment.setEmployee(null);
+                assignmentRepository.save(assignment);
+            });
+            return;
+        }
+
+
+        // 3. Gestione Assegnazione/Cambio
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
-        // 2. Cerchiamo l'assegnazione esistente (anche se isActive = false)
+
+               
+        // Cerchiamo l'assegnazione esistente (anche se isActive = false)
         TeacherAssignment assignment = assignmentRepository
                 .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
                 .orElseGet(() -> {
@@ -148,17 +138,62 @@ public class TeacherAssignmentService {
                     return newTa;
                 });
 
-        // 3. Aggiorniamo il docente
+        // 4. Aggiorniamo il docente
         assignment.setEmployee(employee);
 
-        // 4. LOGICA CRITICA: Se la materia era disattivata, la riattiviamo
+        // 5. LOGICA CRITICA: Se la materia era disattivata, la riattiviamo
         // Questo permette di "recuperare" una materia archiviata semplicemente riassegnando un docente
         assignment.setActive(true);
 
         assignmentRepository.save(assignment);
     }
-
+*/
  
+    @Transactional
+    public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
+        if (subjectId == null) {
+            throw new RuntimeException("subjectId obbligatorio per l'assegnazione dello Staffing");
+        }
+
+        // 1. Cerchiamo l'assegnazione una sola volta
+        TeacherAssignment assignment = assignmentRepository
+                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
+                .orElse(null);
+
+        // 2. CASO RIMOZIONE (Unassign)
+        if (employeeId == null) {
+            if (assignment != null) {
+                assignment.setEmployee(null);
+                // Opzionale: assignment.setActive(false); // Se vuoi disattivare la riga quando togli il docente
+                assignmentRepository.save(assignment);
+            }
+            return; 
+        }
+
+        // 3. CASO ASSEGNAZIONE / CAMBIO
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+
+        // Se non esiste l'assegnazione, la creiamo
+        if (assignment == null) {
+            YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
+                    .orElseThrow(() -> new RuntimeException("YearRoom not found"));
+            Subject subject = subjectRepository.findById(subjectId)
+                    .orElseThrow(() -> new RuntimeException("Subject not found"));
+
+            assignment = new TeacherAssignment();
+            assignment.setYearRoom(yearRoom);
+            assignment.setSubject(subject);
+            assignment.setClassTeacher(false);
+        }
+
+        // Aggiorniamo i dati comuni
+        assignment.setEmployee(employee);
+        assignment.setActive(true); 
+
+        assignmentRepository.save(assignment);
+    }
+
 
     /**
      * Recupera tutte le assegnazioni (Staffing) per una stanza, mappate in DTO.
