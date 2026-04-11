@@ -84,6 +84,12 @@ public class SubjectService {
         subjectRepository.save(subject);
     }
     
+    // Recupera le materie attive non ancora assegnate a una specifica YearRoom (per il dropdown di aggiunta)
+    @Transactional(readOnly = true)
+    public List<Subject> getAvailableSubjectsForRoom(Integer yearRoomId) {
+        return subjectRepository.findAvailableForRoom(yearRoomId);
+    }
+
 }
 
 

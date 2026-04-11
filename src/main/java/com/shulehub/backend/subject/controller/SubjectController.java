@@ -70,4 +70,12 @@ public class SubjectController {
         subjectService.toggleSubjectStatus(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Stato materia modificato con successo", null));
     }
+
+    // Recupera le materie attive non ancora assegnate a una specifica YearRoom (per il dropdown di aggiunta)
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_VIEW_ROOM')")
+    @GetMapping("/available-for-room/{yearRoomId}")
+    public ResponseEntity<ApiResponse<List<Subject>>> getAvailableForRoom(@PathVariable Integer yearRoomId) {
+        List<Subject> subjects = subjectService.getAvailableSubjectsForRoom(yearRoomId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Materie disponibili recuperate", subjects));
+    }
 }
