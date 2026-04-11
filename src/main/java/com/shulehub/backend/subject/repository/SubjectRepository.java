@@ -23,7 +23,8 @@ public interface SubjectRepository extends JpaRepository<Subject, Short> {
 
     // Query personalizzata per trovare le materie attive non ancora assegnate a una YearRoom specifica
     @Query("SELECT s FROM Subject s WHERE s.subjectIsActive = true " +
-           "AND s.subjectId NOT IN (SELECT ta.subject.subjectId FROM TeacherAssignment ta WHERE ta.yearRoom.yearRoomId = :yearRoomId) " +
-           "ORDER BY s.subjectNameEng Asc")
+        "AND s.id NOT IN (SELECT ta.subject.id FROM TeacherAssignment ta WHERE ta.yearRoom.yearRoomId = :yearRoomId) " +
+        "ORDER BY s.subjectNameEng Asc")
     List<Subject> findAvailableForRoom(@Param("yearRoomId") Integer yearRoomId);
+
 }
