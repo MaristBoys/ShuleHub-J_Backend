@@ -82,7 +82,7 @@ public class TeacherAssignmentController {
     /**
      * Attiva o disattiva un'assegnazione specifica.
      * PATCH /api/v1/teacher-assignments/staffing/{assignmentId}/status?active=true
-     */
+    
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
     @PatchMapping("/staffing/{assignmentId}/status")
     public ResponseEntity<ApiResponse<Void>> toggleAssignmentStatus(
@@ -93,6 +93,24 @@ public class TeacherAssignmentController {
         String message = active ? "Subject activated" : "Subject deactivated";
         return ResponseEntity.ok(new ApiResponse<>(true, message, null));
     }
+ */
+    /**
+     * Attiva o disattiva un'assegnazione specifica usando YearRoom e Subject.
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
+    @PatchMapping("/year-rooms/{yearRoomId}/subjects/{subjectId}/toggle")
+    public ResponseEntity<ApiResponse<Void>> toggleAssignmentStatus(
+            @PathVariable Integer yearRoomId,
+            @PathVariable Short subjectId) {
+        
+        // Il service deve trovare il record e invertire il flag active
+        boolean newState = assignmentService.toggleAssignmentStatus(yearRoomId, subjectId);
+        
+        String message = newState ? "Subject activated" : "Subject deactivated";
+        return ResponseEntity.ok(new ApiResponse<>(true, message, null));
+    }
+
+
 
     /**
      * Rimuove un'assegnazione. 
@@ -163,7 +181,7 @@ public class TeacherAssignmentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Configurazione copiata con successo", null));
     }
 */
-    // In TeacherAssignmentController.java
+    
 
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'ALL_VIEW', 'CONFIG_VIEW_ROOM')")
     @GetMapping("/year-rooms/{yearRoomId}/eligible-sources")

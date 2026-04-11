@@ -66,7 +66,7 @@ public class TeacherAssignmentService {
                 // Utilizziamo il metodo delete predefinito di JpaRepository
                 assignmentRepository.delete(assignment);
             });
-            return; 
+             return; 
         }
 
         // 3. CASO ASSEGNAZIONE O UPDATE:
@@ -335,7 +335,7 @@ public class TeacherAssignmentService {
      * Cambia lo stato di attivazione di un'assegnazione (Staffing).
      * @param assignmentId l'ID della riga in cfg_yearroom_subject_teacher
      * @param active il nuovo stato desiderato
-     */
+    
     @Transactional
     public void toggleAssignmentStatus(Integer assignmentId, boolean active) {
         TeacherAssignment ta = assignmentRepository.findById(assignmentId)
@@ -346,6 +346,20 @@ public class TeacherAssignmentService {
         // ma lo mettiamo per chiarezza.
         assignmentRepository.save(ta);
     }
+ */
+    public boolean toggleAssignmentStatus(Integer yearRoomId, Short subjectId) {
+        TeacherAssignment assignment = assignmentRepository
+                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+
+        boolean newState = !assignment.isActive();
+        assignment.setActive(newState);
+        assignmentRepository.save(assignment);
+        return newState;
+    }
+
+
+
 
     // recupera le stanze idonee a essere sorgenti per la funzione di Smart Copy 
     // (stesso Form, anno corrente o precedente, escludendo la stanza target)
