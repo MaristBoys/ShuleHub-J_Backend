@@ -153,6 +153,25 @@ public class TeacherAssignmentController {
 
 
     /**
+     * Aggiunge in bulk più materie alla stanza (usato per il multi-select).
+     */
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'STAFFING_EDIT')")
+    @PostMapping("/bulk-assign")
+    public ResponseEntity<ApiResponse<Void>> bulkAssignSubjects(
+            @RequestParam Integer yearRoomId,
+            @RequestBody List<Short> subjectIds) {
+        
+        assignmentService.bulkAssignSubjects(yearRoomId, subjectIds);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Materie aggiunte con successo", null));
+}
+
+
+
+
+
+
+
+    /**
      * DTO per la richiesta di copia massiva della configurazione (Smart Copy).
      * * @param previousYearId L'ID dell'anno scolastico da cui prelevare i dati (Sorgente).
      * @param copyTeachers   Se true, il sistema tenterà di mantenere gli stessi docenti
