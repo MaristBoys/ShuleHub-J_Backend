@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 @Entity
 @Table(
@@ -38,4 +40,18 @@ public class YearRoomStudent {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_year", nullable = false)
     private Year year;
+
+    // --- NUOVI CAMPI AGGIUNTI PER ALLINEAMENTO DB ---
+
+    @Column(name = "candidate_number")
+    private String candidateNumber;
+
+    /**
+     * Corrisponde alla colonna GENERATED ALWAYS as (regexp_replace(...)) STORED.
+     * insertable = false, updatable = false: Impedisce a JPA di provare a scrivere il valore (lo fa il DB).
+     * @Generated: Istruisce Hibernate a rileggere il valore generato dal database dopo Insert o Update.
+     */
+    @Column(name = "candidate_number_normalized", insertable = false, updatable = false)
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    private String candidateNumberNormalized;
 }

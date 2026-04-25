@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -42,6 +45,23 @@ public class Student {
     @Column(name = "note", columnDefinition = "text")
     private String note;
 
+    // --- NUOVI CAMPI AGGIUNTI ---
+
+    @Column(name = "prem_number")
+    private String premNumber;
+
+    /**
+     * Campo GENERATED ALWAYS nel DB. 
+     * Usiamo insertable = false e updatable = false perché il valore è gestito da PostgreSQL.
+     * @Generated indica a Hibernate di rileggere il valore dal DB dopo ogni insert/update.
+     */
+    @Column(name = "prem_number_normalized", insertable = false, updatable = false)
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    private String premNumberNormalized;
+
+    // ----------------------------
+
+
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
@@ -50,7 +70,8 @@ public class Student {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = OffsetDateTime.now();
+        // Sebbene il DB abbia un default, è bene settarlo per averlo disponibile subito nell'oggetto
+        if (createdAt == null) createdAt = OffsetDateTime.now();
         updatedAt = OffsetDateTime.now();
     }
 
