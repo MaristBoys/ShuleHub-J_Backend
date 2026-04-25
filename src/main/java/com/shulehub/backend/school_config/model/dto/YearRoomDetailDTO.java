@@ -6,10 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-
-import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO.SelectedScales;
 
 @Data
 @NoArgsConstructor
@@ -58,9 +55,10 @@ public class YearRoomDetailDTO {
 
     @Data
     @Builder
-    @NoArgsConstructor  // Aggiungi questo
-    @AllArgsConstructor // Aggiungi questo
+    @NoArgsConstructor  
+    @AllArgsConstructor 
     public static class StaffAssignmentInfo {
+        private Integer assignmentId; // Per identificare univocamente l'assegnazione, utile per modifiche o cancellazioni
         private Short subjectId;
         private String subjectName;
         private String subjectAbbr;

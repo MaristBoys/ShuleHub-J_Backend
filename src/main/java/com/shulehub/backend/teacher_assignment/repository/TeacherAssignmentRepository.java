@@ -102,8 +102,6 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
         @Param("yearId") Short yearId
     );
 
-
-
     /**
      * Verifica se esistono voti di condotta nella tabella 'conduct_marks'per gli studenti di una specifica stanza.
      * Dobbiamo collegare i voti agli studenti della specifica stanza (id_yearroom).

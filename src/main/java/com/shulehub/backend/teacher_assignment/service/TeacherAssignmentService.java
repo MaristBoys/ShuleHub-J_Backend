@@ -12,7 +12,6 @@ import com.shulehub.backend.teacher_assignment.model.dto.ClassTeacherSelectionDT
 import com.shulehub.backend.teacher_assignment.model.dto.SubjectTeacherSelectionDTO;
 import com.shulehub.backend.teacher_assignment.model.entity.TeacherAssignment;
 import com.shulehub.backend.teacher_assignment.repository.TeacherAssignmentRepository;
-import com.shulehub.backend.school_config.model.dto.YearRoomDetailDTO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -93,62 +92,7 @@ public class TeacherAssignmentService {
 
     /**
      * Assegna un docente a una specifica materia (Staffing).
-     */
-/*    @Transactional
-    public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
-        // 1. Validazione preventiva: subjectId non può essere null qui
-        if (subjectId == null) {
-            throw new RuntimeException("subjectId obbligatorio per l'assegnazione dello Staffing");
-        }
-
-
-        // 1. Recupera l'assegnazione esistente
-        Optional<TeacherAssignment> existingOpt = assignmentRepository
-                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId);
-
-        // 2. Gestione Unassign (Fondamentale!)
-        if (employeeId == null) {
-            existingOpt.ifPresent(assignment -> {
-                assignment.setEmployee(null);
-                assignmentRepository.save(assignment);
-            });
-            return;
-        }
-
-
-        // 3. Gestione Assegnazione/Cambio
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-
-               
-        // Cerchiamo l'assegnazione esistente (anche se isActive = false)
-        TeacherAssignment assignment = assignmentRepository
-                .findByYearRoomIdAndSubjectId(yearRoomId, subjectId)
-                .orElseGet(() -> {
-                    // Se non esiste, creiamo un nuovo record configurando le relazioni obbligatorie
-                    YearRoom yearRoom = yearRoomRepository.findById(yearRoomId)
-                            .orElseThrow(() -> new RuntimeException("YearRoom not found"));
-                    Subject subject = subjectRepository.findById(subjectId)
-                            .orElseThrow(() -> new RuntimeException("Subject not found"));
-                    
-                    TeacherAssignment newTa = new TeacherAssignment();
-                    newTa.setYearRoom(yearRoom);
-                    newTa.setSubject(subject);
-                    newTa.setClassTeacher(false); // Sicurezza: non è un class teacher
-                    return newTa;
-                });
-
-        // 4. Aggiorniamo il docente
-        assignment.setEmployee(employee);
-
-        // 5. LOGICA CRITICA: Se la materia era disattivata, la riattiviamo
-        // Questo permette di "recuperare" una materia archiviata semplicemente riassegnando un docente
-        assignment.setActive(true);
-
-        assignmentRepository.save(assignment);
-    }
-*/
- 
+     */ 
     @Transactional
     public void assignSubjectTeacher(Integer yearRoomId, Short subjectId, UUID employeeId) {
         if (subjectId == null) {
@@ -234,6 +178,7 @@ public class TeacherAssignmentService {
                 }
 
                 return YearRoomDetailDTO.StaffAssignmentInfo.builder()
+                    .assignmentId(ta.getId())
                     .subjectId(sId)
                     .subjectName(sName)
                     .subjectAbbr(sAbbr)
@@ -317,9 +262,6 @@ public class TeacherAssignmentService {
         }
     }
 
-
-
-
     /**
      * Rimuove un'assegnazione docente-materia (Staffing)
      * Logica: Se ci sono voti associati, facciamo Soft Delete (isActive = false), altrimenti Hard Delete.
@@ -363,7 +305,6 @@ public class TeacherAssignmentService {
             return false; // false = Hard Delete eseguito
         }
     }
-
 
     /**
      * Cambia lo stato di attivazione di un'assegnazione (Staffing).
