@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor // Genera il costruttore necessario per la query JPQL
 public class TeacherAssignmentDTO {
 
+    private Integer assignmentId;
     private Integer yearRoomId;
     private String roomName;
     private Short subjectId;

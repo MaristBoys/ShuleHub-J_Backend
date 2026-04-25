@@ -330,17 +330,25 @@ public class TeacherAssignmentService {
             .orElseThrow(() -> new RuntimeException("Assegnazione non trovata"));
 
         // --- AGGIUNTA SICUREZZA ---
-        // Non permettiamo di rimuovere il Class Teacher da qui (ha un suo flusso dedicato)
+        // 1. Non permettiamo di rimuovere il Class Teacher da qui (ha un suo flusso dedicato)
         if (ta.isClassTeacher()) {
             throw new RuntimeException("Non puoi rimuovere il Class Teacher tramite questa funzione.");
         }
         
+        // 2. Extract IDs safely (preventing NullPointerException on subject)
+        // Se non c'è materia e non è Class Teacher, è un record orfano: Hard Delete senza controlli sui voti
+        if (ta.getSubject() == null) {
+            assignmentRepository.delete(ta);
+            return false;
+        }
+
+
         // Recuperiamo i dati necessari dalle relazioni già mappate
         Short subjectId = ta.getSubject().getId();
         Short yearId = ta.getYearRoom().getYear().getId();
         Integer yearRoomId = ta.getYearRoom().getId();
 
-        // Eseguiamo il controllo incrociato
+        // 3. Eseguiamo il controllo incrociato
         boolean hasData = assignmentRepository.hasPhysicalMarks(subjectId, yearRoomId, yearId) || 
                         assignmentRepository.hasConductMarks(yearRoomId, yearId);
 

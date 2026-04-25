@@ -22,6 +22,7 @@ import java.util.UUID;
 public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssignment, Integer> {
 
     @Query("SELECT new com.shulehub.backend.teacher_assignment.model.dto.TeacherAssignmentDTO(" +
+       "ta.id, " +
        "yr.id, " +
        "r.roomName, " +
        "s.id, " +
@@ -47,9 +48,6 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
      */
     List<TeacherAssignment> findByYearRoomId(Integer yearRoomId);
 
-
-
-
     /**
      * Recupera l'assegnazione del Class Teacher per una specifica YearRoom.
      * Per convenzione, il Class Teacher ha subject = null e classTeacher = true.
@@ -68,9 +66,6 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
         "AND ta.subject IS NOT NULL " +     // Escludiamo il Class Teacher
         "ORDER BY s.subjectNameEng ASC")
     List<TeacherAssignment> findStaffingByYearRoomId(@Param("yearRoomId") Integer yearRoomId);
-
-
-
 
     /**
      * Trova un'assegnazione specifica per materia.

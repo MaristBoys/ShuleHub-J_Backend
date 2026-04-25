@@ -78,22 +78,6 @@ public class TeacherAssignmentController {
      */
     public record TeacherSelectionRequest(UUID employeeId) {}
 
-
-    /**
-     * Attiva o disattiva un'assegnazione specifica.
-     * PATCH /api/v1/teacher-assignments/staffing/{assignmentId}/status?active=true
-    
-    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
-    @PatchMapping("/staffing/{assignmentId}/status")
-    public ResponseEntity<ApiResponse<Void>> toggleAssignmentStatus(
-            @PathVariable Integer assignmentId,
-            @RequestParam boolean active) {
-        
-        assignmentService.toggleAssignmentStatus(assignmentId, active);
-        String message = active ? "Subject activated" : "Subject deactivated";
-        return ResponseEntity.ok(new ApiResponse<>(true, message, null));
-    }
- */
     /**
      * Attiva o disattiva un'assegnazione specifica usando YearRoom e Subject.
      */
@@ -115,10 +99,12 @@ public class TeacherAssignmentController {
     /**
      * Rimuove un'assegnazione. 
      * Se ci sono voti, il backend risponderà con successo ma il record sarà solo disattivato.
+     * Il frontend deve interpretare la risposta per mostrare il messaggio corretto.
      */
     @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
-    @DeleteMapping("/staffing/{assignmentId}")
+    @DeleteMapping("/{assignmentId}")
     public ResponseEntity<ApiResponse<Boolean>> removeAssignment(@PathVariable Integer assignmentId) {
+        // La logica di controllo voti e cancellazione è delegata al service
         boolean isSoftDeleted = assignmentService.removeAssignment(assignmentId);
         
         String message = isSoftDeleted 
@@ -127,6 +113,9 @@ public class TeacherAssignmentController {
             
         return ResponseEntity.ok(new ApiResponse<>(true, message, isSoftDeleted));
     }
+
+
+
 
 
     /**
@@ -155,7 +144,7 @@ public class TeacherAssignmentController {
     /**
      * Aggiunge in bulk più materie alla stanza (usato per il multi-select).
      */
-    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'STAFFING_EDIT')")
+    @PreAuthorize("hasAnyAuthority('ALL_ACCESS', 'CONFIG_EDIT_ROOM')")
     @PostMapping("/bulk-assign")
     public ResponseEntity<ApiResponse<Void>> bulkAssignSubjects(
             @RequestParam Integer yearRoomId,
