@@ -18,7 +18,7 @@ public class StudentPickerView {
     @Column(name = "full_name")
     private String fullName;
 
-    @Column(name = "gender")
+    @Column(name = "gender", columnDefinition = "char(1)")
     private String gender;
 
     @Column(name = "prem_number")
