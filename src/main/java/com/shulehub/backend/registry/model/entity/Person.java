@@ -38,8 +38,9 @@ public class Person {
     @Column(name = "full_name", insertable = false, updatable = false)
     private String fullName;
 
-    @Column(name = "id_gender", nullable = false)
-    private Short idGender;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_gender", nullable = false)
+    private Gender gender;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;

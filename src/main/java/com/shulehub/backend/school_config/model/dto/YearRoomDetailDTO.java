@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,5 +78,9 @@ public class YearRoomDetailDTO {
         private UUID studentId;
         private String fullName;      // Da Person.fullName
         private boolean isActive;     // Da Student.studentIsActive
+        private String gender;        // Aggiunto (M/F)
+        private String premNumber;    // Aggiunto    
+        private boolean isDropped;    // Aggiunto
+        private LocalDate droppedDate; // Aggiunto
     }
 }

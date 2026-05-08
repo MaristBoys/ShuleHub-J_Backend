@@ -2,6 +2,7 @@ package com.shulehub.backend.school_config.service;
 
 // Import dei DTO e delle View specifiche per la configurazione
 import com.shulehub.backend.school_config.model.dto.*;
+import com.shulehub.backend.school_config.model.entity.YearRoomStudent;
 import com.shulehub.backend.school_config.model.view.YearRoomDetailView;
 import com.shulehub.backend.school_config.model.view.YearRoomStatsView;
 import com.shulehub.backend.school_config.repository.YearRoomDetailViewRepository;
@@ -251,57 +252,25 @@ public class SchoolConfigService {
         return dtoBuilder.currentScales(currentScales).build();
     }
 
-    // --- METODI PRIVATI DI SUPPORTO PER LA PULIZIA DEL CODICE ---
-/*
-    private List<YearRoomDetailDTO.StaffAssignmentInfo> getStaffAssignments(Integer yearRoomId) {
-        return teacherAssignmentRepository.findByYearRoomId(yearRoomId)
-                .stream()
-                .map(ta -> {
-                    var builder = YearRoomDetailDTO.StaffAssignmentInfo.builder()
-                            .isClassTeacher(ta.isClassTeacher());
 
-                    // Gestione Subject
-                    if (ta.getSubject() != null) {
-                        builder.subjectId(ta.getSubject().getId())
-                               .subjectName(ta.getSubject().getSubjectNameEng());
-                    } else {
-                        builder.subjectId(null)
-                               .subjectName("No Subject");
-                    }
+ private List<YearRoomDetailDTO.StudentListItemDTO> getEnrolledStudents(Integer yearRoomId) {
+    return yearRoomStudentRepository.findByYearRoomIdWithDetails(yearRoomId)
+            .stream()
+            .map(this::mapToStudentListItemDTO) // Riferimento a metodo
+            .collect(Collectors.toList());
+}
 
-                    // Gestione Employee (Docente)
-                    if (ta.getEmployee() != null) {
-                        builder.teacherId(ta.getEmployee().getId())
-                               .fullName(ta.getEmployee().getPerson() != null 
-                                       ? ta.getEmployee().getPerson().getFullName() 
-                                       : "Unknown Name")
-                               .isActive(ta.getEmployee().isEmployeeIsActive());
-                    } else {
-                        builder.teacherId(null)
-                               .fullName("Not Assigned")
-                               .isActive(false);
-                    }
-
-                    return builder.build();
-                })
-                .collect(Collectors.toList());
-    }
-*/
-
-
-
-
-
-    private List<YearRoomDetailDTO.StudentListItemDTO> getEnrolledStudents(Integer yearRoomId) {
-        return yearRoomStudentRepository.findByYearRoomId(yearRoomId)
-                .stream()
-                .map(yrs -> YearRoomDetailDTO.StudentListItemDTO.builder()
-                        .studentId(yrs.getStudent().getId())
-                        .fullName(yrs.getStudent().getPerson().getFullName())
-                        .isActive(yrs.getStudent().isStudentIsActive())
-                        .build())
-                .collect(Collectors.toList());
-    }
+private YearRoomDetailDTO.StudentListItemDTO mapToStudentListItemDTO(YearRoomStudent yrs) {
+    return YearRoomDetailDTO.StudentListItemDTO.builder()
+            .studentId(yrs.getStudent().getId())
+            .fullName(yrs.getStudent().getPerson().getFullName())
+            .isActive(yrs.getStudent().isStudentIsActive())
+            .gender(yrs.getStudent().getPerson().getGender().getGenderAbbr())
+            .premNumber(yrs.getStudent().getPremNumber())
+            .isDropped(yrs.getStudent().isDropped())
+            .droppedDate(yrs.getStudent().getDroppedDate())
+            .build();
+}
 
    
     /**
